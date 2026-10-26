@@ -8,7 +8,7 @@ browser, installs nothing and has no server, so it works on locked-down work com
 - They drop the file in the team chat (Teams, Slack, email). The answer is hidden inside it.
 - **Room 2 (the wall)** opens the file, plays it **flipped**, which turns the gibberish back into something like the
   real song, and pins one of the song cards on the wall. The page says if they got it right.
-- **Host** (optional) adds clips for the pop songs and sends Room 1 a song pack file.
+- **Host** records the pop songs once and puts them on the site, so players download nothing.
 
 Songs: 6 nursery songs with a built-in tune (Twinkle Twinkle, Mary Had a Little Lamb, Row Row Row Your Boat, London
 Bridge, Old MacDonald, Happy Birthday) and 6 iconic pop songs (Don't Stop Believin', Y.M.C.A., Sweet Caroline, Bohemian
@@ -24,25 +24,25 @@ The site is the files in this folder. GitHub Pages hosts it for free:
 
 Browsers only allow the microphone on `https://` links, which GitHub Pages gives you.
 
-Nothing is uploaded: the song pack and the recordings stay on the players' computers and in your chat. The public part
-is only the game itself.
+Nothing is uploaded by players: the recordings stay on the players' computers and in your chat. The public part
+is the game and the host's song pack.
 
 ## Before the game: the pop songs
 
-Pop songs have no audio until the host adds some (the site can't ship copyrighted recordings). On the Host page, for
-each one:
+Every sample is the first 7 seconds of the chorus. Nursery songs have a built-in tune. Pop songs have no audio
+until the host adds some, because the site is public and can't hold copies of the real records. On the Host page:
 
-- **Record clip:** sing the famous bit yourself (about 10 seconds), or
-- **Load audio file:** pick an MP3/M4A you own. It starts with the first 12 seconds; set "Clip starts at" to the
-  chorus, in seconds, and press Forward to check.
+1. For each pop song, press **Record clip** and sing from the start of the chorus. It stops by itself after 7
+   seconds. (Or load an audio file of your own singing and set "Chorus starts at".)
+2. Untick "In the draw" for any song you don't want dealt; it stays on the wall as a decoy.
+3. Press **Save song pack**, then upload `pack.json` on the repo's upload page
+   (github.com/bennitka3/sing-it-backwards/upload/main) and press "Commit changes".
 
-Untick "In the draw" for any song you don't want dealt; it stays on the wall as a decoy. Then press **Save song pack**
-and send `song-pack.json` to Room 1, who press "Load song pack" once. Without a pack, Room 1 draws the nursery songs.
+About a minute later every Room 1 has those songs. Without a `pack.json`, Room 1 draws the nursery songs.
 
 ## Tips
 
 - Room 1 should wear headphones, so the backwards song doesn't leak into the recording.
-- Short clips (8 to 12 seconds) work best. Long ones are very hard to copy backwards.
 - The built-in nursery tunes are a hummed melody with no words. A clip of a real voice singing the words is harder and
   funnier; record your own over any built-in tune on the Host page.
 - If the microphone is blocked on a work computer, check the address-bar icon. If IT has switched it off for

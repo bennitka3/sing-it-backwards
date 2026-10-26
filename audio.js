@@ -72,7 +72,7 @@ function freq(note) {
 export async function renderMelody(melody, tempo) {
   const notes = melody.trim().split(/\s+/).map((t) => { const [n, d] = t.split(':'); return { f: freq(n), d: parseFloat(d || '1') }; });
   const spb = 60 / tempo;
-  const total = notes.reduce((a, n) => a + n.d * spb, 0) + 0.5;
+  const total = notes.reduce((a, n) => a + n.d * spb, 0) + 0.25;
   const sr = 44100;
   const oc = new OfflineAudioContext(1, Math.ceil(total * sr), sr);
   const master = oc.createGain();

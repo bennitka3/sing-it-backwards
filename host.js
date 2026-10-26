@@ -1,8 +1,9 @@
-import { $, esc, play, stop, reverse, songAudio, loadAudio, cut, bufferToWav, toBase64, Recorder, fmtTime, saveFile, kvGet, kvSet } from './audio.js';
-import { SONGS } from './songs.js';
-import { PACK_APP } from './deck.js';
+import { $, esc, play, stop, reverse, songAudio, loadAudio, cut, bufferToWav, toBase64, Recorder, fmtTime, saveFile, kvGet, kvSet, fromBase64 } from './audio.js';
+import { SONGS, CLIP_SECONDS } from './songs.js';
+import { PACK_APP, isPack } from './deck.js';
 
-// Per song: { inPlay, source: ArrayBuffer (the recording or file), name, start, duration }. Kept in this browser.
+// Per song: { inPlay, source: ArrayBuffer (the recording or file), name, start }. Kept in this browser.
+// Every clip is CLIP_SECONDS long, from `start`.
 let edits = {};
 let custom = [];
 let recording = null; // { songId, recorder, timer }
@@ -22,7 +23,7 @@ const save = () => kvSet('host', { edits, custom });
 
 async function forward(s) {
   const e = ed(s.id);
-  if (e.source) return cut(await loadAudio(e.source), e.start || 0, e.duration || 0);
+  if (e.source) return cut(await loadAudio(e.source), e.start || 0, CLIP_SECONDS);
   return songAudio(s);
 }
 
@@ -54,8 +55,8 @@ function render() {
           ${s.custom ? '<button class="sm danger" data-act="delete">Delete card</button>' : ''}
         </div>
         ${e.source ? `<div class="row">
-          <label for="start-${id}">Clip starts at (sec)<input type="number" min="0" step="0.5" id="start-${id}" data-act="start" value="${e.start || 0}"></label>
-          <label for="dur-${id}">Length (sec, 0 = all)<input type="number" min="0" step="0.5" id="dur-${id}" data-act="dur" value="${e.duration || 0}"></label>
+          <label for="start-${id}">Chorus starts at (sec)<input type="number" min="0" step="0.5" id="start-${id}" data-act="start" value="${e.start || 0}"></label>
+          <span class="small muted">The sample is the ${CLIP_SECONDS} seconds from there.</span>
         </div>` : ''}
       </div>
     </div>`;
@@ -80,7 +81,7 @@ $('#songs').addEventListener('click', async (ev) => {
         const take = recording.recorder.stop();
         recording = null;
         if (take.seconds < 1) { render(); return say('That was too short to keep.', true); }
-        Object.assign(ed(song.id), { source: await take.blob.arrayBuffer(), name: 'your recording', start: 0, duration: 0 });
+        Object.assign(ed(song.id), { source: await take.blob.arrayBuffer(), name: 'your recording', start: 0 });
         await save();
         render();
         say(`Saved your clip for ${song.title}. Press Forward to check it.`);
@@ -90,11 +91,13 @@ $('#songs').addEventListener('click', async (ev) => {
         await recorder.start();
         const t0 = performance.now();
         recording = { songId: song.id, recorder, timer: setInterval(() => {
+          const sec = (performance.now() - t0) / 1000;
           const el = document.querySelector('[data-timer]');
-          if (el) el.textContent = fmtTime((performance.now() - t0) / 1000);
-        }, 250) };
+          if (el) el.textContent = fmtTime(sec);
+          if (sec >= CLIP_SECONDS) document.querySelector(`.song-row[data-id="${song.id}"] [data-act="rec"]`)?.click();
+        }, 100) };
         render();
-        say(`Recording ${song.title}. Sing the most famous 10 seconds, then press Stop.`);
+        say(`Recording ${song.title}. Sing from the start of the chorus. It stops by itself after ${CLIP_SECONDS} seconds.`);
       }
     }
   } catch (err) {
@@ -111,15 +114,13 @@ $('#songs').addEventListener('change', async (ev) => {
   const e = ed(song.id);
   if (el.dataset.act === 'inplay') e.inPlay = el.checked;
   if (el.dataset.act === 'start') e.start = Math.max(0, Number(el.value) || 0);
-  if (el.dataset.act === 'dur') e.duration = Math.max(0, Number(el.value) || 0);
   if (el.dataset.act === 'file' && el.files[0]) {
     const f = el.files[0];
     const source = await f.arrayBuffer();
     try { await loadAudio(source); } catch { return say(`This browser can't play ${f.name}. Try an MP3 or WAV.`, true); }
-    // A whole song is long: start with 12 seconds from the top, then set the start to the famous bit.
-    Object.assign(e, { source, name: f.name, start: 0, duration: 12 });
+    Object.assign(e, { source, name: f.name, start: 0 });
     render();
-    say(`Loaded ${f.name}. Set "Clip starts at" to the famous bit, then press Forward to check.`);
+    say(`Loaded ${f.name}. Set "Chorus starts at" to where the chorus begins, then press Forward to check.`);
   }
   await save();
   if (el.dataset.act === 'inplay') render();
@@ -136,6 +137,22 @@ $('#add').addEventListener('submit', async (ev) => {
   render();
 });
 
+// First visit on this computer: start from the songs already on the site.
+async function startFromSite() {
+  try {
+    const res = await fetch('pack.json', { cache: 'no-cache' });
+    if (!res.ok) return;
+    const pack = await res.json();
+    if (!isPack(pack)) return;
+    for (const s of pack.songs) {
+      if (s.custom) custom.push({ id: s.id, title: s.title, artist: s.artist, kind: s.kind, custom: true });
+      const e = ed(s.id);
+      e.inPlay = s.inPlay !== false;
+      if (s.clip) Object.assign(e, { source: fromBase64(s.clip), name: 'on the site', start: 0 });
+    }
+  } catch {}
+}
+
 $('#export').onclick = async () => {
   const b = $('#export');
   b.disabled = true;
@@ -150,9 +167,9 @@ $('#export').onclick = async () => {
       songs.push(entry);
     }
     const pack = { app: PACK_APP, v: 1, createdAt: new Date().toISOString(), songs };
-    saveFile(new Blob([JSON.stringify(pack)], { type: 'application/json' }), 'song-pack.json');
+    saveFile(new Blob([JSON.stringify(pack)], { type: 'application/json' }), 'pack.json');
     const ready = songs.filter((s) => s.inPlay && (s.clip || SONGS.find((x) => x.id === s.id)?.melody)).length;
-    say(`Saved song-pack.json with ${ready} songs ready to draw. Send it to Room 1.`);
+    say(`Saved pack.json with ${ready} songs in the draw. Upload it to the site (steps above) and everyone gets them.`);
   } catch (err) {
     say("The song pack couldn't be saved. " + (err.message || ''), true);
   } finally {
@@ -164,5 +181,6 @@ $('#export').onclick = async () => {
 (async () => {
   const saved = await kvGet('host');
   if (saved) { edits = saved.edits || {}; custom = saved.custom || []; }
+  else await startFromSite();
   render();
 })();

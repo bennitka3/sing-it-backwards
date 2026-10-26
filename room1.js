@@ -1,8 +1,7 @@
-import { $, play, stop, reverse, songAudio, Recorder, fmtTime, micAvailable, encodeWav, scramble, saveFile, toBase64, bufferToWav, kvGet, kvSet } from './audio.js';
-import { defaultDeck, deckFromPack, isPack, playable, wallOf } from './deck.js';
+import { $, play, stop, reverse, songAudio, Recorder, fmtTime, micAvailable, encodeWav, scramble, saveFile, toBase64, bufferToWav } from './audio.js';
+import { defaultDeck, loadSiteDeck, playable, wallOf } from './deck.js';
 
 let deck = defaultDeck();
-let usingPack = false;
 let draw = null;        // { song, number }
 let backwards = null;   // AudioBuffer of the song, reversed
 let take = null;        // { buffer, samples, sampleRate, seconds }
@@ -26,36 +25,14 @@ const setRound = (r) => { try { localStorage.setItem('round', JSON.stringify(r))
 
 function showDeck() {
   const ready = deck.filter(playable).length;
-  $('#deck-status').textContent = usingPack
-    ? `Using the host's song pack: ${ready} song${ready === 1 ? '' : 's'} ready to draw, ${deck.length} cards on the wall.`
-    : `Using the ${ready} built-in nursery songs. Load the host's pack for the pop songs.`;
-  $('#clear-pack').hidden = !usingPack;
+  $('#deck-status').textContent = `${ready} song${ready === 1 ? '' : 's'} in the draw, ${deck.length} cards on Room 2's wall.`;
 }
 
 async function init() {
-  const pack = await kvGet('pack');
-  if (isPack(pack)) { deck = deckFromPack(pack); usingPack = true; }
+  ({ deck } = await loadSiteDeck());
   showDeck();
 }
 
-$('#load-pack').onclick = () => $('#pack-file').click();
-$('#pack-file').onchange = async (e) => {
-  const f = e.target.files[0];
-  e.target.value = '';
-  if (!f) return;
-  try {
-    const pack = JSON.parse(await f.text());
-    if (!isPack(pack)) throw new Error();
-    await kvSet('pack', pack);
-    deck = deckFromPack(pack);
-    usingPack = true;
-    showDeck();
-    say('Song pack loaded.');
-  } catch {
-    say("That file isn't a song pack. Ask the host for the file their Host page saved (song-pack.json).", true);
-  }
-};
-$('#clear-pack').onclick = async () => { await kvSet('pack', undefined); deck = defaultDeck(); usingPack = false; showDeck(); say(''); };
 $('#new-round').onclick = () => { setRound({ used: [], count: 0 }); say('New round: every song is back in the draw and numbering restarts at 1.'); };
 
 async function drawSong() {

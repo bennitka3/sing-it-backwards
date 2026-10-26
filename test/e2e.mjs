@@ -2,7 +2,7 @@
 // the rooms the way players do through their team chat.
 //   node test/e2e.mjs [screenshot-dir]
 // Needs Playwright (npm install --no-save playwright).
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -18,9 +18,12 @@ const base = `http://localhost:${server.address().port}`;
 const browser = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
 const errors = [];
 const contexts = {};
-async function open(p, name, viewport = { width: 1200, height: 900 }) {
+async function open(p, name, viewport = { width: 1200, height: 900 }, setup) {
   // Each room is its own "computer": its own browser storage.
-  contexts[name] ||= await browser.newContext({ permissions: ['microphone'], viewport, acceptDownloads: true });
+  if (!contexts[name]) {
+    contexts[name] = await browser.newContext({ permissions: ['microphone'], viewport, acceptDownloads: true });
+    if (setup) await setup(contexts[name]);
+  }
   const page = await contexts[name].newPage();
   page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.g|Failed to load resource/.test(m.text())) errors.push(`${name}: ${m.text()}`); });
@@ -73,13 +76,17 @@ try {
   await writeFile(mp3, toneWav());
   await host.setInputFiles('.song-row[data-id="ymca"] input[type=file]', mp3);
   await host.waitForSelector('.song-row[data-id="ymca"] .status.ok');
-  await host.fill('#start-ymca', '0.5');
+  await host.fill('#start-ymca', '0.5'); // the "chorus" starts half a second in
   await host.dispatchEvent('#start-ymca', 'change');
   await host.click('.song-row[data-id="ymca"] [data-act="back"]');
   await host.click('.song-row[data-id="sweet-caroline"] [data-act="rec"]');
-  await host.waitForTimeout(1500);
-  await host.click('.song-row[data-id="sweet-caroline"] [data-act="rec"]');
-  await host.waitForSelector('.song-row[data-id="sweet-caroline"] .status.ok');
+  await host.waitForSelector('.song-row[data-id="sweet-caroline"] .status.ok', { timeout: 10000 }); // stops by itself at 7 s
+  const clipLen = await host.evaluate(async () => {
+    const a = await import('./audio.js');
+    const st = await new Promise((res) => { const q = indexedDB.open('sing-it-backwards'); q.onsuccess = () => { const g = q.result.transaction('kv').objectStore('kv').get('host'); g.onsuccess = () => res(g.result); }; });
+    return (await a.loadAudio(st.edits['sweet-caroline'].source)).duration;
+  });
+  expect(clipLen > 6.5 && clipLen < 7.6, 'host recording should stop at 7 s, was ' + clipLen);
   for (const id of ['twinkle', 'mary-lamb', 'row-boat', 'london-bridge', 'old-macdonald', 'happy-birthday']) {
     await host.uncheck(`#inplay-${id}`);
   }
@@ -95,14 +102,21 @@ try {
   await host.waitForSelector('.song-row[data-id="ymca"] .status.ok');
   step('Host page remembers its clips after a reload');
 
-  // Round 1: Room 1 with the pack draws a pop song.
-  const room1 = await open('/room1.html', 'room1');
-  await room1.setInputFiles('#pack-file', pack);
-  await room1.waitForSelector('#clear-pack:not([hidden])');
-  expect(/2 songs ready to draw, 13 cards/.test(await room1.textContent('#deck-status')), 'room1 deck status');
+  // Publish: the site now serves that pack.json (stand-in for ben uploading it to the repo).
+  const packBody = await readFile(pack);
+  const packJson = JSON.parse(packBody);
+  expect(path.basename(pack) === 'pack.json', 'host should save pack.json');
+  const pop = packJson.songs.find((x) => x.id === 'ymca');
+  expect(pop.clip && !packJson.songs.find((x) => x.id === 'twinkle').clip, 'pack holds only the clips the host made');
+
+  // Round 1: Room 1 opens the site and gets the pack's songs with no download.
+  const room1 = await open('/room1.html', 'room1', undefined, async (ctx) => {
+    await ctx.route('**/pack.json', (route) => route.fulfill({ body: packBody, contentType: 'application/json' }));
+  });
+  await room1.waitForFunction(() => /2 songs in the draw, 13 cards/.test(document.querySelector('#deck-status').textContent));
   const rec1 = await singAndSave(room1, 'Alan');
   await shot(room1, 'room1-saved');
-  step('Room 1 loaded the pack, drew a pop song, sang and saved ' + path.basename(rec1));
+  step('Room 1 got the site\'s songs with no download, drew a pop song, sang and saved ' + path.basename(rec1));
 
   const room2 = await open('/room2.html', 'room2');
   await room2.setInputFiles('#files', rec1);
@@ -126,9 +140,19 @@ try {
   await shot(room2, 'room2-result');
   step(`Room 2 opened it, played it flipped, picked ${answer}: Correct!, and heard the real clip`);
 
-  // Round 2: built-in songs (no pack), a wrong guess.
-  await room1.click('#clear-pack');
-  const rec2 = await singAndSave(room1, 'Bea');
+  // Round 2: a site with no pack.json yet uses the built-in songs; a wrong guess.
+  const room1b = await open('/room1.html', 'room1b');
+  await room1b.waitForFunction(() => /^6 songs in the draw, 12 cards/.test(document.querySelector('#deck-status').textContent));
+  const tuneLens = await room1b.evaluate(async () => {
+    const a = await import('./audio.js');
+    const { SONGS } = await import('./songs.js');
+    const out = [];
+    for (const s of SONGS.filter((x) => x.melody)) out.push((await a.renderMelody(s.melody, s.tempo)).duration);
+    return out;
+  });
+  expect(tuneLens.every((d) => d > 6.9 && d < 7.8), 'built-in tunes should be about 7 s: ' + tuneLens.join(', '));
+  step('built-in tunes are ' + tuneLens.map((d) => d.toFixed(1)).join(', ') + ' s long');
+  const rec2 = await singAndSave(room1b, 'Bea');
   await room2.setInputFiles('#files', rec2);
   await room2.waitForSelector('#inbox button >> nth=1');
   await room2.click('.card[data-id="bohemian-rhapsody"]');

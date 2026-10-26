@@ -21,7 +21,7 @@ const errors = [];
 const relay = new Map(); // game -> [docs]
 const contexts = {};
 
-async function open(url, name, { live = true, viewport = { width: 1200, height: 900 } } = {}) {
+async function open(url, name, { live = true, blocked = false, viewport = { width: 1200, height: 900 } } = {}) {
   // Each player is their own "computer": their own browser storage.
   if (!contexts[name]) {
     const ctx = await browser.newContext({ permissions: ['microphone'], viewport, acceptDownloads: true });
@@ -43,11 +43,13 @@ async function open(url, name, { live = true, viewport = { width: 1200, height: 
         };
       });
     }
+    // A work network that blocks Firebase.
+    if (blocked) await ctx.route(/gstatic\.com|googleapis\.com/, (r) => r.abort());
     contexts[name] = ctx;
   }
   const page = await contexts[name].newPage();
   page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
-  page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.g|Failed to load resource/.test(m.text())) errors.push(`${name}: ${m.text()}`); });
+  page.on('console', (m) => { if (m.type() === 'error' && !blocked && !/fonts\.g|Failed to load resource/.test(m.text())) errors.push(`${name}: ${m.text()}`); });
   await page.goto(url.startsWith('http') ? url : base + url);
   return page;
 }
@@ -141,19 +143,22 @@ try {
   expect(tuneLens.length === 10 && tuneLens.every((d) => d > 6.9 && d < 7.8), 'tunes should be about 7 s: ' + tuneLens.join(', '));
   step('all 10 tunes are about 7 s (' + tuneLens.map((d) => d.toFixed(1)).join(', ') + ')');
 
-  // Fallback when live sending is off: Send saves a file, Room 2 opens it.
-  const offline1 = await open('/room1.html', 'offline-room1', { live: false });
+  // Fallback when the network blocks Firebase: Room 1 offers a file, Room 2 opens it.
+  const offline1 = await open('/room1.html#OFFL', 'offline-room1', { live: false, blocked: true });
   await sing(offline1, 'Cal');
-  const [dl] = await Promise.all([offline1.waitForEvent('download'), offline1.click('#send')]);
+  await offline1.click('#send');
+  await offline1.waitForSelector('#fallback:not([hidden])', { timeout: 20000 });
+  const [dl] = await Promise.all([offline1.waitForEvent('download'), offline1.click('#save')]);
   const file = path.join(tmp, dl.suggestedFilename());
   await dl.saveAs(file);
-  const offline2 = await open('/room2.html', 'offline-room2', { live: false });
+  const offline2 = await open('/room2.html#OFFL', 'offline-room2', { live: false, blocked: true });
+  await offline2.waitForFunction(() => /couldn't connect/.test(document.querySelector('#live-status').textContent), null, { timeout: 15000 });
   await offline2.setInputFiles('#files', file);
   await offline2.waitForSelector('#inbox button');
   await writeFile(path.join(tmp, 'not-ours.txt'), 'hello');
   await offline2.setInputFiles('#files', path.join(tmp, 'not-ours.txt'));
   await offline2.waitForSelector('#msg.error:not([hidden])');
-  step('with live sending off, Send saves a file and Room 2 opens it (and rejects other files)');
+  step('on a network that blocks Firebase: both rooms say so, Room 1 saves a file, Room 2 opens it (and rejects other files)');
 
   for (const p of ['/', link1, link2]) {
     const page = await open(p, 'phone', { viewport: { width: 390, height: 844 } });

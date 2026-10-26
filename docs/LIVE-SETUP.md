@@ -17,7 +17,7 @@ It's free (Firebase's "Spark" plan, no card). If it ever asks for billing detail
 6. It shows a block that starts `const firebaseConfig = {`. Copy that block and paste it to Claude in the chat.
    It's safe to share: those values are meant to be public, and step 4's rules are what protect the database.
 
-Claude then puts it in `firebase-config.js`. A minute later the site sends live.
+Claude then puts it in `firebase-config.js`. A minute later the site sends live. (Done 2026-10-26: project `sing-it-backwards-c0027`.)
 
 ## Good to know
 

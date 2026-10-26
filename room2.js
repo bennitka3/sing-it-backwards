@@ -1,8 +1,9 @@
-import { $, esc, play, stop, reverse, parseWav, unscramble, songAudio, kvGet, kvSet } from './audio.js';
+import { $, esc, play, stop, reverse, parseWav, unscramble, songAudio, kvGet, kvSet, fromBase64 } from './audio.js';
 import { SONGS } from './songs.js';
-import { defaultDeck, wallOf } from './deck.js';
+import { deck, wallOf } from './deck.js';
+import { liveEnabled, watchLive, gameCode } from './live.js';
 
-// recordings: [{ id, player, number, songId, wall, clip, guess, wav: ArrayBuffer }], kept in this browser.
+// recordings: [{ id, player, number, songId, wall, guess, wav: ArrayBuffer }], kept in this browser.
 let recordings = [];
 let selected = null;
 let pending = null;
@@ -25,30 +26,63 @@ const key = (id) => [...(seed + id)].reduce((h, c) => Math.imul(h ^ c.charCodeAt
 function wall() {
   const cards = new Map();
   for (const r of recordings) for (const c of r.wall) cards.set(c.id, c);
-  if (!cards.size) for (const c of wallOf(defaultDeck())) cards.set(c.id, c);
+  if (!cards.size) for (const c of wallOf(deck())) cards.set(c.id, c);
   return [...cards.values()].sort((a, b) => key(a.id) - key(b.id));
 }
 const titleOf = (id) => wall().find((c) => c.id === id)?.title || 'an unknown song';
 const current = () => recordings.find((r) => r.id === selected);
 const persist = () => kvSet('room2', recordings);
 
-async function addFiles(files) {
-  let added = 0;
-  for (const f of files) {
-    const wav = await f.arrayBuffer();
-    const parsed = parseWav(wav);
-    const answer = parsed && parsed.chunks.bwsg && unscramble(parsed.chunks.bwsg);
-    if (!parsed || !parsed.buffer || !answer || !answer.songId) {
-      say(`${f.name} isn't a Room 1 recording. Ask Room 1 to send the file their page saved (it starts with "room1-song").`, true);
-      continue;
-    }
-    if (recordings.some((r) => r.id === answer.id)) { selected = answer.id; continue; }
-    recordings.push({ ...answer, wall: answer.wall || wallOf(defaultDeck()), guess: null, wav });
-    selected = answer.id;
-    added++;
+// Add one recording (a Room 1 WAV). Returns true if it was new.
+function addRecording(wav, label, quiet) {
+  const parsed = parseWav(wav);
+  const answer = parsed && parsed.chunks.bwsg && unscramble(parsed.chunks.bwsg);
+  if (!parsed || !parsed.buffer || !answer || !answer.songId) {
+    if (!quiet) say(`${label} isn't a Room 1 recording. Ask Room 1 to send it from their page.`, true);
+    return false;
   }
+  if (recordings.some((r) => r.id === answer.id)) return false;
+  recordings.push({ ...answer, wall: answer.wall || wallOf(deck()), guess: null, wav });
+  if (!current() || current().guess) selected = answer.id;
+  return true;
+}
+
+async function addFiles(files) {
+  let added = false;
+  for (const f of files) added = addRecording(await f.arrayBuffer(), f.name) || added;
   if (added) { pending = null; say(''); await persist(); }
   render();
+}
+
+// Live: every recording Room 1 sends to this game arrives here by itself (and the earlier ones on load).
+let stopWatching = () => {};
+async function connect() {
+  stopWatching();
+  const game = gameCode();
+  $('#join').hidden = !!game || !liveEnabled();
+  if (!liveEnabled()) { $('#live-status').textContent = "Live sending isn't set up yet. Room 1 sends recordings as files through your chat."; return; }
+  if (!game) { $('#live-status').textContent = 'Enter the game code from the host to get Room 1\'s recordings.'; return; }
+  $('#live-status').textContent = `Game ${game} · connecting…`;
+  stopWatching = await watchLive(game, async (doc) => {
+    $('#live-status').textContent = `Game ${game} · live: recordings appear by themselves`;
+    if (addRecording(fromBase64(doc.payload), 'A recording', true)) { chime(); await persist(); render(); }
+  }, () => {
+    $('#live-status').textContent = `Game ${game} · couldn't connect. This network may block it; Room 1 can send files through your chat instead.`;
+  });
+  setTimeout(() => {
+    if (/connecting/.test($('#live-status').textContent)) $('#live-status').textContent = `Game ${game} · live: waiting for Room 1`;
+  }, 4000);
+}
+$('#join').addEventListener('submit', (e) => { e.preventDefault(); location.hash = $('#code-input').value.trim(); });
+window.addEventListener('hashchange', connect);
+
+function chime() {
+  try {
+    const c = new (window.AudioContext || window.webkitAudioContext)();
+    const o = c.createOscillator(); const g = c.createGain();
+    o.frequency.value = 880; g.gain.setValueAtTime(0.08, c.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.6);
+    o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + 0.6);
+  } catch {}
 }
 
 $('#open').onclick = () => $('#files').click();
@@ -83,7 +117,7 @@ function render() {
     $('#verdict').textContent = right ? 'Correct!' : 'Not quite.';
     $('#verdict').className = 'verdict ' + (right ? 'right' : 'wrong');
     $('#truth').textContent = right ? `It was ${titleOf(r.songId)}.` : `You picked ${titleOf(r.guess)}. It was ${titleOf(r.songId)}.`;
-    $('#play-real').hidden = !(r.clip || SONGS.find((s) => s.id === r.songId)?.melody);
+    $('#play-real').hidden = !SONGS.find((s) => s.id === r.songId);
   }
 
   $('#wall').innerHTML = wall().map((s, i) => {
@@ -124,7 +158,7 @@ function toggle(btn, label, getBuffer) {
 }
 toggle($('#play-flip'), '▶ Play it flipped', async (r) => reverse(sung(r)));
 toggle($('#play-raw'), 'Hear it as sung', async (r) => sung(r));
-toggle($('#play-real'), '▶ Hear the real song', (r) => songAudio(r.clip ? { clip: r.clip } : SONGS.find((s) => s.id === r.songId)));
+toggle($('#play-real'), '▶ Hear the real song', (r) => songAudio(SONGS.find((s) => s.id === r.songId)));
 
 $('#cancel').onclick = () => { pending = null; render(); };
 $('#lock').onclick = async () => {
@@ -150,4 +184,5 @@ $('#clear-yes').onclick = async () => {
   if (Array.isArray(saved)) recordings = saved;
   selected = recordings.find((r) => !r.guess)?.id || recordings[recordings.length - 1]?.id || null;
   render();
+  connect();
 })();

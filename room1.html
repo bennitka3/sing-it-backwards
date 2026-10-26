@@ -14,8 +14,12 @@
   <h1>Copy the sounds, not the words.</h1>
 
   <section class="panel">
-    <span class="step-label">Songs</span>
-    <p id="deck-status">Loading the songs…</p>
+    <span class="step-label">Game</span>
+    <p id="game-status">Game code: <strong id="game-code">none</strong></p>
+    <form id="join" class="row" style="align-items:end" hidden>
+      <label for="code-input">Game code from the host<input id="code-input" type="text" maxlength="12" placeholder="e.g. K7QF" autocomplete="off"></label>
+      <button class="sm" type="submit">Join</button>
+    </form>
     <div class="row"><button id="new-round" class="sm">Start a new round</button></div>
   </section>
 
@@ -47,16 +51,16 @@
     <div id="take" hidden style="display:grid;gap:12px">
       <div class="row">
         <button id="play-take">▶ Hear your take</button>
-        <button id="save" class="primary">Save recording for Room 2</button>
+        <button id="send" class="primary">Send to Room 2</button>
       </div>
-      <p class="small muted">Your take will sound like nonsense. That's right: Room 2 hears it flipped. Not happy? Record again.</p>
+      <p class="small muted">Your take will sound like nonsense. That's right: Room 2 hears it flipped. Not happy? Record again before you send.</p>
     </div>
   </section>
 
   <section class="panel" id="handoff" hidden>
-    <span class="step-label">Step 4 · Send it</span>
-    <p>Saved to your Downloads as <strong id="saved-name"></strong>.</p>
-    <p>Drop that file into your team chat (Teams, Slack or email). Room 2 opens it on their page. The answer is hidden inside the file.</p>
+    <span class="step-label">Sent</span>
+    <p id="handoff-text"></p>
+    <div class="row" id="fallback" hidden><button id="save" class="sm">Save it as a file instead</button></div>
   </section>
 
   <p id="msg" class="notice" hidden></p>

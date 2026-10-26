@@ -10,25 +10,55 @@
 </head>
 <body>
 <main class="wrap">
-  <header class="top"><span class="brand">Sing It Backwards</span><a class="room-tag" href="host.html">Host</a></header>
+  <header class="top"><span class="brand">Sing It Backwards</span><span class="room-tag">Lobby</span></header>
   <section style="display:grid;gap:12px">
     <h1>Hear it backwards.<br>Sing it backwards.<br>Find the card.</h1>
     <p class="lede">A two-room game, inspired by the backwards-song challenge on The Traitors. Room 1 hears a song played in reverse and copies the sounds. Room 2 only hears that recording, flipped the right way round, and has to find the song on the wall.</p>
   </section>
+  <section class="panel">
+    <span class="step-label">Start a game</span>
+    <div class="row"><button id="new-game" class="primary">Start a new game</button><span class="muted small">Gives you a game code and two links to share.</span></div>
+    <div id="links" hidden style="display:grid;gap:10px">
+      <p>Game code <strong id="code" class="timer" style="font-size:22px"></strong></p>
+      <div class="row"><span style="min-width:0;overflow-wrap:anywhere">Room 1 (singers): <code id="link1"></code></span><button class="sm" data-copy="link1">Copy</button></div>
+      <div class="row"><span style="min-width:0;overflow-wrap:anywhere">Room 2 (guessers): <code id="link2"></code></span><button class="sm" data-copy="link2">Copy</button></div>
+    </div>
+  </section>
   <nav class="doors">
-    <a class="door" href="room1.html"><span class="n">Room 1</span><h2>The Singer</h2><span class="muted">Listen to a song in reverse, sing it back, send it on.</span></a>
-    <a class="door" href="room2.html"><span class="n">Room 2</span><h2>The Wall</h2><span class="muted">Hear the flipped recording and pin the right card.</span></a>
+    <a class="door" id="door1" href="room1.html"><span class="n">Room 1</span><h2>The Singer</h2><span class="muted">Listen to a song in reverse, sing it back, send it on.</span></a>
+    <a class="door" id="door2" href="room2.html"><span class="n">Room 2</span><h2>The Wall</h2><span class="muted">Hear the flipped recording and pin the right card.</span></a>
   </nav>
   <section class="panel">
     <h2>How to play</h2>
     <ol class="how">
-      <li>Everyone joins your usual video call and opens this site in a browser. Nothing to install.</li>
-      <li>Room 1 draws a secret song (a 7-second sample from the start of the chorus), plays it backwards as often as they like, records themselves copying the backwards sounds and saves the recording.</li>
-      <li>Room 1 drops that file in the team chat. Room 2 opens it on their page and plays it flipped. Done well, the gibberish turns back into the real song.</li>
-      <li>Room 2 pins one card on the wall. The answer is hidden inside the file, so the page can say whether they got it right.</li>
+      <li>Everyone joins your usual video call. Nothing to install and no logins.</li>
+      <li>The host presses <strong>Start a new game</strong> and sends the Room 1 link to the singers and the Room 2 link to the guessers.</li>
+      <li>Room 1 draws a secret song (the famous first line, about 7 seconds), plays it backwards as often as they like, records themselves copying the backwards sounds and presses Send.</li>
+      <li>The recording pops up on every open Room 2 page. They play it flipped. Done well, the gibberish turns back into the song.</li>
+      <li>Room 2 pins one card on the wall, and the page says whether they got it right.</li>
     </ol>
-    <p class="small muted">Headphones help in Room 1, so the backwards song doesn't leak into the recording. Nothing to download or install: the songs are built in, and recordings only travel through your own chat.</p>
+    <p class="small muted">Headphones help in Room 1, so the backwards song doesn't leak into the recording. Recordings are kept for the game in a small free database (Google Firebase) and nowhere else.</p>
   </section>
 </main>
+<script type="module">
+  import { newGameCode } from './live.js';
+  const base = location.href.replace(/[#?].*$/, '').replace(/index\.html$/, '');
+  document.getElementById('new-game').onclick = () => {
+    const code = newGameCode();
+    const l1 = `${base}room1.html#${code}`, l2 = `${base}room2.html#${code}`;
+    document.getElementById('code').textContent = code;
+    document.getElementById('link1').textContent = l1;
+    document.getElementById('link2').textContent = l2;
+    document.getElementById('door1').href = l1;
+    document.getElementById('door2').href = l2;
+    document.getElementById('links').hidden = false;
+  };
+  document.querySelectorAll('[data-copy]').forEach((b) => b.onclick = async () => {
+    const text = document.getElementById(b.dataset.copy).textContent;
+    try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; }
+    catch { getSelection().selectAllChildren(document.getElementById(b.dataset.copy)); b.textContent = 'Press Ctrl+C'; }
+    setTimeout(() => (b.textContent = 'Copy'), 2000);
+  });
+</script>
 </body>
 </html>

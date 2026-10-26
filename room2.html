@@ -14,9 +14,14 @@
   <div class="split">
     <aside class="panel">
       <h2>Recordings</h2>
+      <p id="live-status" class="small muted">Connecting…</p>
+      <form id="join" class="row" style="align-items:end" hidden>
+        <label for="code-input">Game code from the host<input id="code-input" type="text" maxlength="12" placeholder="e.g. K7QF" autocomplete="off"></label>
+        <button class="sm" type="submit">Join</button>
+      </form>
       <div id="drop" class="drop">
-        <p>Drag Room 1's file here</p>
-        <button id="open" class="primary sm">Open a recording</button>
+        <p class="small">Got a recording as a file? Drag it here.</p>
+        <button id="open" class="sm">Open a recording</button>
         <input type="file" id="files" accept=".wav,audio/wav,audio/x-wav" multiple>
       </div>
       <div id="inbox" class="inbox"></div>
@@ -27,7 +32,7 @@
       <div class="panel" id="stage">
         <span class="step-label" id="stage-label">No recording yet</span>
         <h2 id="stage-title">The wall is waiting.</h2>
-        <p class="muted" id="stage-help">Room 1 saves a recording and drops it in your team chat. Download it, open it here, play it, then pin the card you think it is.</p>
+        <p class="muted" id="stage-help">Keep this page open. When Room 1 sends a recording it appears here by itself. Play it, then pin the card you think it is.</p>
         <div class="row" id="stage-controls" hidden>
           <button id="play-flip" class="primary">▶ Play it flipped</button>
           <button id="play-raw" class="sm">Hear it as sung</button>

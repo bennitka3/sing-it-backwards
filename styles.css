@@ -177,3 +177,9 @@ input[type="file"] { display: none; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .drop { display: grid; gap: 10px; justify-items: start; padding: 16px; border: 1px dashed var(--gold-deep); border-radius: 6px; }
 .drop.over { border-color: var(--gold); background: rgba(208, 166, 78, 0.1); }
+/* Correct-answer celebration (celebrate.js) */
+.celebrate-tint { position: fixed; inset: 0; pointer-events: none; z-index: 50; background: rgba(208, 166, 78, 0.28);
+  animation: tint 3s ease-out forwards; }
+@keyframes tint { 0% { opacity: 0; } 12% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+.celebrate-confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 51; }
+@media (prefers-reduced-motion: reduce) { .celebrate-tint { animation: none !important; opacity: 1; } }

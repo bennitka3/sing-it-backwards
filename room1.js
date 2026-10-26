@@ -1,6 +1,7 @@
 import { $, play, stop, reverse, songAudio, Recorder, fmtTime, micAvailable, encodeWav, scramble, saveFile, toBase64 } from './audio.js';
 import { deck as fullDeck, wallOf } from './deck.js';
-import { liveEnabled, sendLive, gameCode } from './live.js';
+import { liveEnabled, sendLive, watchResults, gameCode } from './live.js';
+import { celebrate } from './celebrate.js';
 
 const deck = fullDeck();
 let game = gameCode();
@@ -31,13 +32,25 @@ function showGame() {
   if (!liveEnabled()) $('#game-status').textContent = "Live sending isn't set up yet, so recordings are saved as files for your chat.";
 }
 
+// When Room 2 locks in a guess, Room 1 hears how it went.
+let stopResults = () => {};
+async function listen() {
+  stopResults();
+  if (!game || !liveEnabled()) return;
+  stopResults = await watchResults(game, (res, fresh) => {
+    if (!fresh) return;
+    if (res.correct) { celebrate(); say(`Room 2 got secret song #${res.number} right!`); }
+    else say(`Room 2 guessed secret song #${res.number}, and got it wrong.`);
+  });
+}
+
 $('#join').addEventListener('submit', (e) => {
   e.preventDefault();
   location.hash = $('#code-input').value.trim();
   game = gameCode();
   showGame();
 });
-window.addEventListener('hashchange', () => { game = gameCode(); showGame(); });
+window.addEventListener('hashchange', () => { game = gameCode(); showGame(); listen(); });
 
 $('#new-round').onclick = () => { setRound({ used: [], count: 0 }); say('New round: every song is back in the draw and numbering restarts at 1.'); };
 
@@ -187,3 +200,4 @@ $('#send').onclick = async () => {
 
 if (!micAvailable()) say('The microphone only works when this page is opened from its https:// link.', true);
 showGame();
+listen();

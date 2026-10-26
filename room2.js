@@ -1,7 +1,8 @@
 import { $, esc, play, stop, reverse, parseWav, unscramble, songAudio, kvGet, kvSet, fromBase64 } from './audio.js';
 import { SONGS } from './songs.js';
 import { deck, wallOf } from './deck.js';
-import { liveEnabled, watchLive, gameCode } from './live.js';
+import { liveEnabled, watchLive, watchResults, sendResult, gameCode } from './live.js';
+import { celebrate } from './celebrate.js';
 
 // recordings: [{ id, player, number, songId, wall, guess, wav: ArrayBuffer }], kept in this browser.
 let recordings = [];
@@ -56,8 +57,10 @@ async function addFiles(files) {
 
 // Live: every recording Room 1 sends to this game arrives here by itself (and the earlier ones on load).
 let stopWatching = () => {};
+let stopResults = () => {};
 async function connect() {
   stopWatching();
+  stopResults();
   const game = gameCode();
   $('#join').hidden = !!game || !liveEnabled();
   if (!liveEnabled()) { $('#live-status').textContent = "Live sending isn't set up yet. Room 1 sends recordings as files through your chat."; return; }
@@ -68,6 +71,16 @@ async function connect() {
     if (addRecording(fromBase64(doc.payload), 'A recording', true)) { chime(); await persist(); render(); }
   }, () => {
     $('#live-status').textContent = `Game ${game} · couldn't connect. This network may block it; Room 1 can send files through your chat instead.`;
+  });
+  // Another Room 2 page's guess counts for this team too.
+  stopResults = await watchResults(game, async (res, fresh) => {
+    const r = recordings.find((x) => x.id === res.recordingId);
+    if (!r || r.guess) return;
+    r.guess = res.guess;
+    if (r.id === selected) pending = null;
+    await persist();
+    render();
+    if (fresh && res.correct) celebrate();
   });
   setTimeout(() => {
     if (/connecting/.test($('#live-status').textContent)) $('#live-status').textContent = `Game ${game} · live: waiting for Room 1`;
@@ -168,6 +181,10 @@ $('#lock').onclick = async () => {
   pending = null;
   await persist();
   render();
+  if (r.guess === r.songId) celebrate();
+  // Tell Room 1 (and any other Room 2 page) how it went. If the database refuses, the game still works here.
+  const game = gameCode();
+  if (game && liveEnabled()) sendResult(game, r.id, { number: Number(r.number) || 0, guess: r.guess, correct: r.guess === r.songId }).catch(() => {});
 };
 
 $('#clear').onclick = () => { $('#clear-confirm').hidden = false; };

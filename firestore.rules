@@ -1,6 +1,7 @@
 rules_version = '2';
 // Paste into Firebase console > Firestore Database > Rules. Anyone with a game code can add a recording
-// to that game and hear its recordings; nobody can list games, and recordings can't be edited.
+// to that game and hear its recordings, and post one result (Room 2's guess) per recording. Nobody can list
+// games, and nothing can be edited once written.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /games/{game}/recordings/{recording} {
@@ -13,6 +14,16 @@ service cloud.firestore {
         && request.resource.data.payload is string && request.resource.data.payload.size() < 1000000;
       allow delete: if true;
       allow update: if false;
+    }
+    match /games/{game}/results/{result} {
+      allow get, list: if true;
+      allow create: if request.resource.data.keys().hasOnly(['recordingId', 'number', 'guess', 'correct', 'createdAt'])
+        && request.resource.data.recordingId == result && result.size() <= 64
+        && request.resource.data.number is int
+        && request.resource.data.guess is string && request.resource.data.guess.size() <= 64
+        && request.resource.data.correct is bool
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
     }
   }
 }

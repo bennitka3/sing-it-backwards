@@ -18,7 +18,7 @@ const server = await serve(0);
 const base = `http://localhost:${server.address().port}`;
 const browser = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
 const errors = [];
-const relay = new Map(); // game -> [docs]
+const relay = new Map(); // 'game/kind' -> [docs]
 const contexts = {};
 
 async function open(url, name, { live = true, blocked = false, viewport = { width: 1200, height: 900 } } = {}) {
@@ -26,18 +26,29 @@ async function open(url, name, { live = true, blocked = false, viewport = { widt
   if (!contexts[name]) {
     const ctx = await browser.newContext({ permissions: ['microphone'], viewport, acceptDownloads: true });
     if (live) {
-      await ctx.exposeFunction('__relaySend', (game, doc) => { (relay.get(game) || relay.set(game, []).get(game)).push(doc); });
-      await ctx.exposeFunction('__relayList', (game, from) => (relay.get(game) || []).slice(from));
+      // Stand-in for Firebase: entries live in `relay` in this test process, shared by every "computer".
+      const list = (game, kind) => { const k = game + '/' + kind; return relay.get(k) || relay.set(k, []).get(k); };
+      await ctx.exposeFunction('__relayAdd', (game, kind, doc) => { list(game, kind).push(doc); });
+      await ctx.exposeFunction('__relayPut', (game, kind, id, doc) => {
+        const l = list(game, kind);
+        if (l.some((d) => d.__id === id)) throw new Error('already exists');
+        l.push({ ...doc, __id: id });
+      });
+      await ctx.exposeFunction('__relayList', (game, kind, from) => list(game, kind).slice(from));
       await ctx.addInitScript(() => {
         window.__liveTransport = {
-          send: (game, doc) => window.__relaySend(game, doc),
-          watch: (game, onAdd) => {
-            let seen = 0;
-            const t = setInterval(async () => {
-              const docs = await window.__relayList(game, seen);
+          add: (game, kind, doc) => window.__relayAdd(game, kind, doc),
+          put: (game, kind, id, doc) => window.__relayPut(game, kind, id, doc),
+          watch: (game, kind, onAdd) => {
+            let seen = 0, first = true;
+            const tick = async () => {
+              const docs = await window.__relayList(game, kind, seen);
               seen += docs.length;
-              docs.forEach(onAdd);
-            }, 300);
+              docs.forEach((d) => onAdd(d, !first));
+              first = false;
+            };
+            tick();
+            const t = setInterval(tick, 300);
             return () => clearInterval(t);
           },
         };
@@ -92,7 +103,7 @@ try {
   await room1.click('#send');
   await room1.waitForSelector('#handoff:not([hidden])');
   expect(/^Sent!/.test(await room1.textContent('#handoff-text')), 'room1 says Sent!');
-  const doc = relay.get(code)[0];
+  const doc = relay.get(code + '/recordings')[0];
   const perSecond = doc.payload.length / 2.3;
   expect(perSecond * 20 < 1_000_000, `a 20 s recording must fit one database entry (${Math.round(perSecond * 20)} bytes)`);
   step(`Room 1 sang and pressed Send: no file saved (${Math.round(doc.payload.length / 1024)} KB sent)`);
@@ -108,6 +119,15 @@ try {
   await room2.click('#lock');
   await room2.waitForSelector('#result:not([hidden])');
   expect((await room2.textContent('#verdict')) === 'Correct!', 'expected Correct!');
+  await room2.waitForSelector('.celebrate-tint', { timeout: 1000 });
+  await room2.waitForSelector('canvas.celebrate-confetti', { timeout: 1000 });
+  await room2.waitForTimeout(400);
+  await shot(room2, 'room2-celebrate');
+  await room1.waitForSelector('.celebrate-tint', { timeout: 3000 });
+  expect(/Room 2 got secret song #1 right!/.test(await room1.textContent('#msg')), 'room1 told it was right');
+  await shot(room1, 'room1-celebrate');
+  await room2.waitForFunction(() => !document.querySelector('.celebrate-tint, .celebrate-confetti'), null, { timeout: 4000 });
+  step('right guess: confetti and gold tint in Room 2 and in Room 1, gone after about 3 s');
   await room2.click('#play-real');
   await room2.waitForSelector('#play-real[data-playing]', { timeout: 5000 });
   await shot(room2, 'room2-result');
@@ -123,11 +143,16 @@ try {
   await room2.waitForSelector('#result:not([hidden])');
   expect((await room2.textContent('#verdict')) === 'Not quite.', 'expected a wrong guess');
   expect((await room2.textContent('#score')) === '1 of 2 right', 'score');
-  step('second recording arrived live; wrong guess revealed; score 1 of 2');
+  await room1.waitForFunction(() => /got it wrong/.test(document.querySelector('#msg').textContent), null, { timeout: 3000 });
+  await room1.waitForTimeout(400);
+  expect(!(await room1.$('.celebrate-tint')) && !(await room2.$('.celebrate-tint')), 'no celebration for a wrong guess');
+  step('second recording arrived live; wrong guess: no confetti, Room 1 told it was wrong; score 1 of 2');
 
   const late = await open(link2, 'late-guesser');
   await late.waitForSelector('#inbox button >> nth=1', { timeout: 3000 });
-  step('a Room 2 player who opens the page late gets both recordings');
+  await late.waitForFunction(() => document.querySelector('#score').textContent === '1 of 2 right', null, { timeout: 3000 });
+  expect(!(await late.$('.celebrate-tint')), 'old results must not set off confetti on a page opened later');
+  step("a Room 2 player who opens the page late gets both recordings and the team's guesses, without old confetti");
   const other = await open(link2.replace(/#.*/, '#ZZZZ'), 'other-game');
   await other.waitForTimeout(1200);
   expect(!(await other.$('#inbox button')), 'another game must not see these recordings');

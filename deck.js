@@ -1,5 +1,5 @@
-// The deck: which songs are on the wall and which can be dealt. Without a song pack from the host,
-// it's the built-in list (only the songs with a built-in tune can be dealt).
+// The deck: which songs are on the wall and which can be dealt. It comes from the site's pack.json
+// (made on the Host page and uploaded to the repo); without one, it's the built-in list.
 import { SONGS } from './songs.js';
 
 export const PACK_APP = 'sing-it-backwards';
@@ -14,4 +14,15 @@ export function deckFromPack(pack) {
     const builtin = SONGS.find((b) => b.id === s.id);
     return { ...(builtin || {}), ...s };
   });
+}
+
+export async function loadSiteDeck() {
+  try {
+    const res = await fetch('pack.json', { cache: 'no-cache' });
+    if (res.ok) {
+      const pack = await res.json();
+      if (isPack(pack)) return { deck: deckFromPack(pack), fromPack: true };
+    }
+  } catch {}
+  return { deck: defaultDeck(), fromPack: false };
 }

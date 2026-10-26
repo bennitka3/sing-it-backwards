@@ -13,7 +13,7 @@
   <header class="top"><a class="brand" href="index.html">Sing It Backwards</a><span class="room-tag">Host · Song Vault</span></header>
   <section style="display:grid;gap:10px">
     <h1>The Song Vault</h1>
-    <p class="lede">Every song here is a card on Room 2's wall. Nursery songs come with a built-in tune. For the pop songs, record yourself singing the famous bit, or load an MP3 you own and set where the clip starts. Then save the song pack and send it to Room 1.</p>
+    <p class="lede">Every song here is a card on Room 2's wall. Nursery songs come with a built-in tune. For the pop songs, record yourself singing the first 7 seconds of the chorus. Then put the songs on the site so every player has them, with nothing to download.</p>
   </section>
 
   <section class="panel">
@@ -27,8 +27,13 @@
   </section>
 
   <section class="panel">
-    <h2>Send it to Room 1</h2>
-    <p>Saves <strong>song-pack.json</strong> to your Downloads. Send it to Room 1 in your team chat; they press "Load song pack" once. Your clips stay in that file and on this computer. Nothing is uploaded anywhere.</p>
+    <h2>Put the songs on the site</h2>
+    <ol class="how">
+      <li>Press <strong>Save song pack</strong>. It saves <strong>pack.json</strong> to your Downloads.</li>
+      <li>Open <a href="https://github.com/bennitka3/sing-it-backwards/upload/main" style="color:var(--gold)" target="_blank" rel="noopener">the repo's upload page</a>, drag pack.json in, and press <strong>Commit changes</strong>.</li>
+      <li>About a minute later, every Room 1 has these songs. Players download nothing.</li>
+    </ol>
+    <p class="small muted">The site is public, so only put your own singing in the pack, never a copy of the real record.</p>
     <div class="row"><button id="export" class="primary">Save song pack</button></div>
   </section>
   <p id="msg" class="notice" hidden></p>

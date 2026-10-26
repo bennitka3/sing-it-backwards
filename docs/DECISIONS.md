@@ -1,5 +1,20 @@
 # Decisions
 
+## 2026-10-26: songs built into the site; 7-second chorus samples
+
+ben: "Can we do this without any end users having to download song files? Can they be pre-loaded? And let's have the
+samples only be 7 seconds of the beginning of the chorus of the songs."
+
+- **The song pack lives on the site** as `pack.json` (the host saves it on the Host page and uploads it to the repo).
+  Room 1 loads it automatically; players download nothing. Room 1 recordings still travel through the chat, since
+  there's no server.
+- **Every sample is 7 seconds** from the start of the chorus. Host recordings stop by themselves at 7 s; nursery tunes
+  were sped up to fit their famous first line into 7 s (nursery songs have no chorus).
+- **Pop samples are the host's own singing, never the real records.** The site is public, and putting commercial
+  recordings on it would be copyright infringement. Claude also doesn't write out pop melodies as built-in tunes:
+  from memory the notes would likely be wrong, and a wrong tune makes the round unwinnable.
+
+
 ## 2026-10-26: no server; GitHub Pages; files through the team chat
 
 ben: "this needs to work on locked down work machines, so a brew install is off the table… any app install is
@@ -11,7 +26,7 @@ probably off the table. they can see public github pages though if that works."
   opening the file doesn't give it away.
 - **Rejected: a free public relay (e.g. ntfy.sh)** for automatic sending. It's a third party holding voice recordings,
   work firewalls often block such sites, and it couldn't be tested from Claude's sandbox.
-- **Pop clips go to Room 1 as a song-pack file from the host,** never onto the public site (copyright).
+- ~~**Pop clips go to Room 1 as a song-pack file from the host.**~~ Superseded the same day: the pack now lives on the site (above).
 - **Needs a public repo** for free Pages; Claude can't create repos (403), so ben creates it.
 
 

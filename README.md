@@ -1,18 +1,20 @@
 # Sing It Backwards
 
 A two-room party game based on the backwards-song challenge on The Traitors. It's a plain website: it runs in any
-browser, installs nothing and has no server, so it works on locked-down work computers.
+browser, installs nothing, and players never log in.
 
+- The host presses **Start a new game** in the lobby and shares two links (they carry the game code).
 - **Room 1 (the singer)** draws a secret song, hears it **played backwards**, records themselves copying those
-  backwards sounds, and saves the recording.
-- They drop the file in the team chat (Teams, Slack, email). The answer is hidden inside it.
-- **Room 2 (the wall)** opens the file, plays it **flipped**, which turns the gibberish back into something like the
-  real song, and pins one of the song cards on the wall. The page says if they got it right.
-- **Host** records the pop songs once and puts them on the site, so players download nothing.
+  backwards sounds and presses **Send**.
+- **Room 2 (the wall)** sees the recording pop up by itself, plays it **flipped** (the gibberish turns back into
+  something like the song) and pins one of the cards on the wall. The page says if they got it right.
 
-Songs: 6 nursery songs with a built-in tune (Twinkle Twinkle, Mary Had a Little Lamb, Row Row Row Your Boat, London
-Bridge, Old MacDonald, Happy Birthday) and 6 iconic pop songs (Don't Stop Believin', Y.M.C.A., Sweet Caroline, Bohemian
-Rhapsody, Livin' on a Prayer, Dancing Queen). Every song is a card on the wall; the host can add more cards.
+Songs: 10 public-domain nursery songs, each a built-in tune of its famous first line (about 7 seconds): Twinkle
+Twinkle, Mary Had a Little Lamb, Row Row Row Your Boat, London Bridge, Old MacDonald, Happy Birthday, Frère Jacques,
+Jingle Bells, The Itsy Bitsy Spider, Hot Cross Buns.
+
+Live sending uses a free Firebase database the host sets up once: `docs/LIVE-SETUP.md`. Until then, or on a network
+that blocks it, Room 1's recording is saved as a file to pass on through your chat.
 
 ## Putting it online (once)
 
@@ -24,31 +26,16 @@ The site is the files in this folder. GitHub Pages hosts it for free:
 
 Browsers only allow the microphone on `https://` links, which GitHub Pages gives you.
 
-Nothing is uploaded by players: the recordings stay on the players' computers and in your chat. The public part
-is the game and the host's song pack.
-
-## Before the game: the pop songs
-
-Every sample is the first 7 seconds of the chorus. Nursery songs have a built-in tune. Pop songs have no audio
-until the host adds some, because the site is public and can't hold copies of the real records. On the Host page:
-
-1. For each pop song, press **Record clip** and sing from the start of the chorus. It stops by itself after 7
-   seconds. (Or load an audio file of your own singing and set "Chorus starts at".)
-2. Untick "In the draw" for any song you don't want dealt; it stays on the wall as a decoy.
-3. Press **Save song pack**, then upload `pack.json` on the repo's upload page
-   (github.com/bennitka3/sing-it-backwards/upload/main) and press "Commit changes".
-
-About a minute later every Room 1 has those songs. Without a `pack.json`, Room 1 draws the nursery songs.
+Recordings are kept only in the game's Firebase database, under the game code.
 
 ## Tips
 
 - Room 1 should wear headphones, so the backwards song doesn't leak into the recording.
-- The built-in nursery tunes are a hummed melody with no words. A clip of a real voice singing the words is harder and
-  funnier; record your own over any built-in tune on the Host page.
+- The built-in tunes are a hummed melody with no words, so Room 1 copies a melody, not lyrics.
 - If the microphone is blocked on a work computer, check the address-bar icon. If IT has switched it off for
   websites, that person can be in Room 2 instead.
 
 ## For developers
 
-No dependencies, no build. `npm start` serves the folder at http://localhost:3000. `npm test` plays two whole rounds
-in Chromium with a fake microphone, passing the files between rooms (needs Playwright). Song list: `songs.js`.
+No dependencies, no build. `npm start` serves the folder at http://localhost:3000. `npm test` plays whole rounds in
+Chromium with a fake microphone and a stand-in for Firebase (needs Playwright). Song list: `songs.js`.

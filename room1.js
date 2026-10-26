@@ -1,7 +1,9 @@
-import { $, play, stop, reverse, songAudio, Recorder, fmtTime, micAvailable, encodeWav, scramble, saveFile, toBase64, bufferToWav } from './audio.js';
-import { defaultDeck, loadSiteDeck, playable, wallOf } from './deck.js';
+import { $, play, stop, reverse, songAudio, Recorder, fmtTime, micAvailable, encodeWav, scramble, saveFile, toBase64 } from './audio.js';
+import { deck as fullDeck, wallOf } from './deck.js';
+import { liveEnabled, sendLive, gameCode } from './live.js';
 
-let deck = defaultDeck();
+const deck = fullDeck();
+let game = gameCode();
 let draw = null;        // { song, number }
 let backwards = null;   // AudioBuffer of the song, reversed
 let take = null;        // { buffer, samples, sampleRate, seconds }
@@ -23,23 +25,26 @@ function say(text, isError) {
 const getRound = () => { try { return JSON.parse(localStorage.getItem('round')) || { used: [], count: 0 }; } catch { return { used: [], count: 0 }; } };
 const setRound = (r) => { try { localStorage.setItem('round', JSON.stringify(r)); } catch {} };
 
-function showDeck() {
-  const ready = deck.filter(playable).length;
-  $('#deck-status').textContent = `${ready} song${ready === 1 ? '' : 's'} in the draw, ${deck.length} cards on Room 2's wall.`;
+function showGame() {
+  $('#game-code').textContent = game || 'none';
+  $('#join').hidden = !!game || !liveEnabled();
+  if (!liveEnabled()) $('#game-status').textContent = "Live sending isn't set up yet, so recordings are saved as files for your chat.";
 }
 
-async function init() {
-  ({ deck } = await loadSiteDeck());
-  showDeck();
-}
+$('#join').addEventListener('submit', (e) => {
+  e.preventDefault();
+  location.hash = $('#code-input').value.trim();
+  game = gameCode();
+  showGame();
+});
+window.addEventListener('hashchange', () => { game = gameCode(); showGame(); });
 
 $('#new-round').onclick = () => { setRound({ used: [], count: 0 }); say('New round: every song is back in the draw and numbering restarts at 1.'); };
 
 async function drawSong() {
   say('');
   stop();
-  const pool = deck.filter(playable);
-  if (!pool.length) return say('No songs are ready to draw. Load the song pack again, or go back to the built-in songs.', true);
+  const pool = deck;
   const round = getRound();
   const skipped = draw?.song.id;
   const notSkipped = pool.filter((s) => s.id !== skipped);
@@ -60,7 +65,7 @@ async function drawSong() {
   try {
     backwards = reverse(await songAudio(song));
   } catch {
-    return say("This song's clip couldn't be played. Draw a different song.", true);
+    return say("This song couldn't be played. Draw a different song.", true);
   }
   $('#play-back').disabled = false;
   $('#play-back').textContent = '▶ Play it backwards';
@@ -109,7 +114,7 @@ $('#rec').onclick = async () => {
   timerId = setInterval(() => {
     const s = (performance.now() - t0) / 1000;
     $('#timer').textContent = fmtTime(s);
-    if (s > 60) b.click(); // a minute is plenty
+    if (s > 20) b.click(); // the sample is 7 s; 20 s keeps a recording small enough to send
   }, 250);
   b.classList.add('on');
   b.textContent = '■ Stop';
@@ -118,24 +123,22 @@ $('#rec').onclick = async () => {
 
 $('#play-take').onclick = () => { if (take) play(take.buffer); };
 
-$('#save').onclick = async () => {
-  if (!take || !draw) return;
+// The recording, with the answer and the wall scrambled inside it (Room 2 checks guesses with it).
+function packRecording() {
   const player = nameInput.value.trim() || 'Someone';
   const { song, number } = draw;
-  // Room 2 needs the wall, the answer and (for a clip) the real song to play after the guess.
   const answer = {
     v: 1, id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-    player, number, createdAt: new Date().toISOString(),
-    songId: song.id, wall: wallOf(deck),
-    clip: song.clip ? (typeof song.clip === 'string' ? song.clip : await toBase64(bufferToWav(await songAudio(song)))) : undefined,
+    player, number, createdAt: new Date().toISOString(), songId: song.id, wall: wallOf(deck),
   };
-  const blob = encodeWav(take.samples, take.sampleRate, { bwsg: scramble(answer) });
-  const safe = player.replace(/[^\w-]+/g, '').slice(0, 20) || 'singer';
-  const name = `room1-song-${number}-${safe}.wav`;
-  saveFile(blob, name);
-  $('#saved-name').textContent = name;
+  return { player, number, blob: encodeWav(take.samples, take.sampleRate, { bwsg: scramble(answer) }, 16000) };
+}
+
+function finish(text, rec) {
+  $('#handoff-text').textContent = text;
   $('#handoff').hidden = false;
-  say('');
+  $('#fallback').hidden = !rec;
+  lastRecording = rec;
   draw = null; backwards = null; take = null;
   $('#drawn').hidden = true;
   $('#draw-empty').hidden = false;
@@ -143,7 +146,44 @@ $('#save').onclick = async () => {
   $('#rec').disabled = true;
   $('#rec').textContent = '● Start singing';
   $('#timer').textContent = '0:00';
+}
+
+let lastRecording = null;
+function saveAsFile(rec) {
+  const safe = rec.player.replace(/[^\w-]+/g, '').slice(0, 20) || 'singer';
+  const name = `room1-song-${rec.number}-${safe}.wav`;
+  saveFile(rec.blob, name);
+  return name;
+}
+$('#save').onclick = () => {
+  if (!lastRecording) return;
+  const name = saveAsFile(lastRecording);
+  $('#handoff-text').textContent = `Saved to your Downloads as ${name}. Drop it in your team chat; Room 2 opens it on their page.`;
+  $('#fallback').hidden = true;
+};
+
+$('#send').onclick = async () => {
+  if (!take || !draw) return;
+  say('');
+  const rec = packRecording();
+  if (!liveEnabled()) {
+    const name = saveAsFile(rec);
+    return finish(`Saved to your Downloads as ${name}. Drop it in your team chat; Room 2 opens it on their page.`);
+  }
+  if (!game) return say('Enter the game code first (Game, at the top), so Room 2 gets it.', true);
+  const b = $('#send');
+  b.disabled = true;
+  b.textContent = 'Sending…';
+  try {
+    await sendLive(game, { player: rec.player, number: rec.number, payload: await toBase64(rec.blob) });
+    finish(`Sent! Room 2 has secret song #${rec.number}. Draw another song whenever you're ready.`);
+  } catch {
+    finish("It couldn't be sent live, maybe this network blocks it. Save it as a file and drop it in your team chat instead.", rec);
+  } finally {
+    b.disabled = false;
+    b.textContent = 'Send to Room 2';
+  }
 };
 
 if (!micAvailable()) say('The microphone only works when this page is opened from its https:// link.', true);
-init();
+showGame();

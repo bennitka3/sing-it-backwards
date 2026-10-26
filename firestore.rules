@@ -1,0 +1,18 @@
+rules_version = '2';
+// Paste into Firebase console > Firestore Database > Rules. Anyone with a game code can add a recording
+// to that game and hear its recordings; nobody can list games, and recordings can't be edited.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /games/{game}/recordings/{recording} {
+      allow get, list: if true;
+      allow create: if game.size() <= 12
+        && request.resource.data.keys().hasOnly(['player', 'number', 'createdAt', 'payload'])
+        && request.resource.data.player is string && request.resource.data.player.size() <= 40
+        && request.resource.data.number is int
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.payload is string && request.resource.data.payload.size() < 1000000;
+      allow delete: if true;
+      allow update: if false;
+    }
+  }
+}

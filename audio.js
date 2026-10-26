@@ -180,15 +180,21 @@ export function mono(buf) {
 
 export function bufferToWav(buf, extra) { return encodeWav(mono(buf), buf.sampleRate, extra); }
 
-// 16-bit mono WAV. extra: {fourcc: Uint8Array} chunks written after the audio (how a recording carries its answer).
-export function encodeWav(samples, sampleRate, extra = {}) {
-  // Halve the rate when it's high: smaller files, still plenty for a voice.
+// 16-bit mono WAV, at most maxRate samples a second. extra: {fourcc: Uint8Array} chunks written after the
+// audio (how a recording carries its answer).
+export function encodeWav(samples, sampleRate, extra = {}, maxRate = 24000) {
+  // Average down to a lower rate: smaller files, still plenty for a voice.
+  const factor = Math.max(1, Math.ceil(sampleRate / maxRate));
   let rate = sampleRate;
-  if (sampleRate >= 44100) {
-    const half = new Float32Array(samples.length >> 1);
-    for (let i = 0; i < half.length; i++) half[i] = (samples[2 * i] + samples[2 * i + 1]) / 2;
-    samples = half;
-    rate = sampleRate / 2;
+  if (factor > 1) {
+    const out = new Float32Array(Math.floor(samples.length / factor));
+    for (let i = 0; i < out.length; i++) {
+      let sum = 0;
+      for (let k = 0; k < factor; k++) sum += samples[i * factor + k];
+      out[i] = sum / factor;
+    }
+    samples = out;
+    rate = Math.round(sampleRate / factor);
   }
   const chunks = Object.entries(extra);
   const extraSize = chunks.reduce((a, [, d]) => a + 8 + d.length + (d.length & 1), 0);

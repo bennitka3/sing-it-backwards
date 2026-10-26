@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-10-26: send live to Room 2; nursery songs only
+
+ben: "ok forget the pop songs. but I still have to save my recording as room 1 for room 2... I don't want to have to
+save it. it should automatically send to those with the room 2 tab open." And: "as long as the room 1 and 2 users
+don't have to login to anything."
+
+- **Live sending through a free Google Firebase database** (Firestore). Room 1 presses Send; every Room 2 page with
+  that game code gets it at once, and a Room 2 that opens late gets the earlier ones. No logins for players; the host
+  sets it up once with a Google account (`docs/LIVE-SETUP.md`). Chosen over other relays because work networks rarely
+  block Google, it's free with no card, and it pushes new recordings instantly.
+- **Why not save recordings to GitHub** (ben asked): writing to the repo needs a GitHub password-like token inside
+  the page. On a public site anyone could copy it and change or delete the repo. GitHub Pages also takes about a
+  minute to publish each change, so Room 2 would wait a minute per recording.
+- **Room 1 still presses Send** after hearing their take, so a bad take can be redone instead of going straight out.
+- **Game codes** keep separate groups apart (the lobby makes one and gives both links).
+- **The file hand-off stays as a fallback** when Firebase isn't set up or a network blocks it.
+- **Pop songs and the Host page removed.** Added 4 public-domain songs (Frère Jacques, Jingle Bells, Itsy Bitsy
+  Spider, Hot Cross Buns) so the wall still has 10 cards.
+
+
 ## 2026-10-26: songs built into the site; 7-second chorus samples
 
 ben: "Can we do this without any end users having to download song files? Can they be pre-loaded? And let's have the
@@ -21,7 +41,7 @@ ben: "this needs to work on locked down work machines, so a brew install is off 
 probably off the table. they can see public github pages though if that works."
 
 - **Static site on GitHub Pages,** no server and nothing to install. Replaces the Node server + tunnel.
-- **Recordings travel as a file through the chat the players already use.** It's the one channel a locked-down
+- ~~**Recordings travel as a file through the chat the players already use.**~~ Now the fallback (above). It's the one channel a locked-down
   machine is sure to allow. The answer, the wall and (for pop songs) the real clip ride inside the WAV, scrambled so
   opening the file doesn't give it away.
 - **Rejected: a free public relay (e.g. ntfy.sh)** for automatic sending. It's a third party holding voice recordings,

@@ -19,6 +19,11 @@ It's free (Firebase's "Spark" plan, no card). If it ever asks for billing detail
 
 Claude then puts it in `firebase-config.js`. A minute later the site sends live. (Done 2026-10-26: project `sing-it-backwards-c0027`.)
 
+## When firestore.rules changes
+
+Paste the new `firestore.rules` into the same Rules tab and publish again (step 4). Latest change: 2026-10-26, so Room 1
+hears Room 2's guess (the confetti in both rooms).
+
 ## Good to know
 
 - Each recording is about 80 KB. The free plan holds about 1 GB, so thousands of games before anything fills up.

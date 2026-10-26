@@ -7,7 +7,8 @@ through a free Firebase database (`live.js`, `firebase-config.js`, `firestore.ru
 when that's off or blocked, they go as files through the players' chat. Why: `docs/DECISIONS.md`.
 
 - Pages: `index.html` (lobby, makes game codes), `room1.*` (singer), `room2.*` (wall). Shared code: `audio.js`
-  (reverse, synth, mic to WAV, the scrambled answer chunk, browser storage), `deck.js`, `songs.js`, `live.js`.
+  (reverse, synth, mic to WAV, the scrambled answer chunk, browser storage), `deck.js`, `songs.js`, `live.js`, `celebrate.js`.
+- Changing `firestore.rules` only takes effect once ben pastes it into the Firebase console; tell him.
 - Use relative paths only (the site lives at `/sing-it-backwards/`).
 - Songs are public-domain tunes only (ben dropped pop songs, 2026-10-26). Never commit copyrighted audio.
 - Test: `npm install --no-save playwright` then `npm test` (whole rounds in Chromium with a fake mic and a stand-in for Firebase).

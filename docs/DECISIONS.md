@@ -1,5 +1,17 @@
 # Decisions
 
+## 2026-10-26: celebrate a right guess in both rooms
+
+ben (after testing live on his work laptop): "when room 2 gets it right can you add confetti and screen background
+color tint change for a couple seconds for both rooms?"
+
+- A right guess sets off confetti and a gold tint for about 3 seconds on Room 2 and on Room 1. A wrong guess doesn't;
+  Room 1 gets a one-line message either way.
+- To reach Room 1, Room 2's guess is now saved in the game (`results`, one per recording, first guess wins). That also
+  means every Room 2 page in a game shows the team's guess. It needed a rules update in the Firebase console.
+- Only guesses made while a page is open set off confetti; opening a page later doesn't replay old celebrations.
+
+
 ## 2026-10-26: send live to Room 2; nursery songs only
 
 ben: "ok forget the pop songs. but I still have to save my recording as room 1 for room 2... I don't want to have to

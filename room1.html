@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Cinzel:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<title>Room 1 · The Singer</title>
+</head>
+<body>
+<main class="wrap" style="max-width:720px">
+  <header class="top"><a class="brand" href="index.html">Sing It Backwards</a><span class="room-tag">Room 1 · The Singer</span></header>
+  <h1>Copy the sounds, not the words.</h1>
+
+  <section class="panel">
+    <span class="step-label">Songs</span>
+    <p id="deck-status">Using the built-in nursery songs.</p>
+    <div class="row">
+      <button id="load-pack" class="sm">Load song pack from the host</button>
+      <button id="clear-pack" class="sm" hidden>Go back to built-in songs</button>
+      <button id="new-round" class="sm">Start a new round</button>
+      <input type="file" id="pack-file" accept=".json,application/json">
+    </div>
+    <p class="small muted">The host's song pack adds the pop songs. You only load it once on this computer.</p>
+  </section>
+
+  <section class="panel">
+    <span class="step-label">Step 1 · Who's singing</span>
+    <label for="player">Your name (Room 2 sees it)<input id="player" type="text" maxlength="40" placeholder="e.g. Alan"></label>
+  </section>
+
+  <section class="panel">
+    <span class="step-label">Step 2 · Draw a secret song</span>
+    <div id="draw-empty" class="row"><button id="draw" class="primary">Draw a song</button></div>
+    <div id="drawn" hidden style="display:grid;gap:14px">
+      <div class="secret" id="secret">Secret song</div>
+      <div class="row">
+        <button id="play-back" class="primary">▶ Play it backwards</button>
+        <button id="redraw" class="sm">Draw a different song</button>
+      </div>
+      <p class="small muted">Play it as many times as you like. Copy every sound, rhythm and pitch exactly as you hear it.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="rec-panel">
+    <span class="step-label">Step 3 · Sing it backwards</span>
+    <div class="row">
+      <button id="rec" class="rec" disabled>● Start singing</button>
+      <span class="timer" id="timer">0:00</span>
+    </div>
+    <div class="meter"><i id="level"></i></div>
+    <div id="take" hidden style="display:grid;gap:12px">
+      <div class="row">
+        <button id="play-take">▶ Hear your take</button>
+        <button id="save" class="primary">Save recording for Room 2</button>
+      </div>
+      <p class="small muted">Your take will sound like nonsense. That's right: Room 2 hears it flipped. Not happy? Record again.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="handoff" hidden>
+    <span class="step-label">Step 4 · Send it</span>
+    <p>Saved to your Downloads as <strong id="saved-name"></strong>.</p>
+    <p>Drop that file into your team chat (Teams, Slack or email). Room 2 opens it on their page. The answer is hidden inside the file.</p>
+  </section>
+
+  <p id="msg" class="notice" hidden></p>
+</main>
+<script type="module" src="room1.js"></script>
+</body>
+</html>

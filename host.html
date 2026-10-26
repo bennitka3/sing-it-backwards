@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Cinzel:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<title>Host · Song Vault</title>
+</head>
+<body>
+<main class="wrap">
+  <header class="top"><a class="brand" href="index.html">Sing It Backwards</a><span class="room-tag">Host · Song Vault</span></header>
+  <section style="display:grid;gap:10px">
+    <h1>The Song Vault</h1>
+    <p class="lede">Every song here is a card on Room 2's wall. Nursery songs come with a built-in tune. For the pop songs, record yourself singing the famous bit, or load an MP3 you own and set where the clip starts. Then save the song pack and send it to Room 1.</p>
+  </section>
+
+  <section class="panel">
+    <div class="row" style="justify-content:space-between"><h2>Songs</h2><span class="small muted" id="ready-count"></span></div>
+    <div class="songs" id="songs"></div>
+    <form id="add" class="row" style="align-items:end">
+      <label for="add-title">Add a song<input id="add-title" type="text" maxlength="80" placeholder="Title"></label>
+      <label for="add-artist">Artist (optional)<input id="add-artist" type="text" maxlength="60" placeholder="Artist"></label>
+      <button class="sm" type="submit">Add card</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Send it to Room 1</h2>
+    <p>Saves <strong>song-pack.json</strong> to your Downloads. Send it to Room 1 in your team chat; they press "Load song pack" once. Your clips stay in that file and on this computer. Nothing is uploaded anywhere.</p>
+    <div class="row"><button id="export" class="primary">Save song pack</button></div>
+  </section>
+  <p id="msg" class="notice" hidden></p>
+</main>
+<script type="module" src="host.js"></script>
+</body>
+</html>

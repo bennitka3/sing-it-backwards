@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Cinzel:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<title>Room 2 · The Wall</title>
+</head>
+<body>
+<main class="wrap">
+  <header class="top"><a class="brand" href="index.html">Sing It Backwards</a><span class="room-tag">Room 2 · The Wall · <span id="score">0 of 0 right</span></span></header>
+  <div class="split">
+    <aside class="panel">
+      <h2>Recordings</h2>
+      <div id="drop" class="drop">
+        <p>Drag Room 1's file here</p>
+        <button id="open" class="primary sm">Open a recording</button>
+        <input type="file" id="files" accept=".wav,audio/wav,audio/x-wav" multiple>
+      </div>
+      <div id="inbox" class="inbox"></div>
+      <button id="clear" class="sm danger" hidden>Clear the list</button>
+      <div id="clear-confirm" class="row" hidden><span class="small">Remove every recording and guess?</span><button id="clear-yes" class="sm danger">Remove</button><button id="clear-no" class="sm">Keep</button></div>
+    </aside>
+    <section style="display:grid;gap:20px;min-width:0">
+      <div class="panel" id="stage">
+        <span class="step-label" id="stage-label">No recording yet</span>
+        <h2 id="stage-title">The wall is waiting.</h2>
+        <p class="muted" id="stage-help">Room 1 saves a recording and drops it in your team chat. Download it, open it here, play it, then pin the card you think it is.</p>
+        <div class="row" id="stage-controls" hidden>
+          <button id="play-flip" class="primary">▶ Play it flipped</button>
+          <button id="play-raw" class="sm">Hear it as sung</button>
+        </div>
+        <div id="confirm" class="row" hidden>
+          <span>Lock in <strong id="confirm-title"></strong>?</span>
+          <button id="lock" class="primary">Lock it in</button>
+          <button id="cancel" class="sm">Not yet</button>
+        </div>
+        <div id="result" hidden style="display:grid;gap:10px">
+          <span class="verdict" id="verdict"></span>
+          <p id="truth"></p>
+          <div class="row"><button id="play-real">▶ Hear the real song</button></div>
+        </div>
+      </div>
+      <div class="wall" id="wall"></div>
+    </section>
+  </div>
+  <p id="msg" class="notice" hidden></p>
+</main>
+<script type="module" src="room2.js"></script>
+</body>
+</html>

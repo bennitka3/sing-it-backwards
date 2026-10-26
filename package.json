@@ -1,0 +1,11 @@
+{
+  "name": "sing-it-backwards",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Party game: hear a song backwards, sing it, the other room hears it flipped and finds the card. Static site, no server.",
+  "scripts": {
+    "start": "node test/serve.mjs",
+    "test": "node test/e2e.mjs"
+  }
+}

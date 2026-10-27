@@ -13,6 +13,9 @@ Songs: 10 public-domain nursery songs, each a built-in tune of its famous first 
 Twinkle, Mary Had a Little Lamb, Row Row Row Your Boat, London Bridge, Old MacDonald, Happy Birthday, Frère Jacques,
 Jingle Bells, The Itsy Bitsy Spider, Hot Cross Buns.
 
+The host is Alan Cumming: a cutout of a CC BY 2.0 photo (Scottish Government, via Wikimedia Commons) on drawn
+outfits, popping up with a line at key moments.
+
 Live sending uses a free Firebase database the host sets up once: `docs/LIVE-SETUP.md`. Until then, or on a network
 that blocks it, Room 1's recording is saved as a file to pass on through your chat.
 

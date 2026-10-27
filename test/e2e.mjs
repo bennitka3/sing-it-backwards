@@ -66,6 +66,12 @@ async function open(url, name, { live = true, blocked = false, viewport = { widt
 }
 const shot = (page, n) => shots && page.screenshot({ path: path.join(shots, n + '.png'), fullPage: true });
 const step = (s) => console.log('✓', s);
+// Alan pops up with a line for this moment, and his picture actually loaded.
+async function alan(page, moment) {
+  await page.waitForSelector(`.alan[data-moment="${moment}"]:not([hidden])`, { timeout: 4000 });
+  await page.waitForFunction(() => { const i = document.querySelector('.alan img'); return i && i.complete && i.naturalWidth > 0; }, null, { timeout: 4000 });
+  return (await page.textContent('.alan-bubble')).trim();
+}
 const expect = (ok, msg) => { if (!ok) throw new Error(msg); };
 const answerOf = (page, i) => page.evaluate((i) => new Promise((res) => {
   const q = indexedDB.open('sing-it-backwards');
@@ -91,6 +97,7 @@ try {
   const link2 = await lobby.textContent('#link2');
   const code = await lobby.textContent('#code');
   expect(/room1\.html#[A-Z0-9]{4}$/.test(link1) && link2.endsWith('room2.html#' + code), 'lobby links: ' + link1);
+  const said = { lobby: await alan(lobby, 'lobby') };
   await shot(lobby, 'lobby');
   step(`lobby made game ${code} with Room 1 and Room 2 links`);
 
@@ -100,8 +107,11 @@ try {
   expect((await room1.textContent('#game-code')) === code, 'room1 shows the game code');
 
   await sing(room1, 'Alan');
+  said.drawn = await alan(room1, 'drawn');
   await room1.click('#send');
   await room1.waitForSelector('#handoff:not([hidden])');
+  said.sent = await alan(room1, 'sent');
+  await shot(room1, 'room1-sent');
   expect(/^Sent!/.test(await room1.textContent('#handoff-text')), 'room1 says Sent!');
   const doc = relay.get(code + '/recordings')[0];
   const perSecond = doc.payload.length / 2.3;
@@ -109,6 +119,7 @@ try {
   step(`Room 1 sang and pressed Send: no file saved (${Math.round(doc.payload.length / 1024)} KB sent)`);
 
   await room2.waitForSelector('#inbox button', { timeout: 3000 });
+  said.arrived = await alan(room2, 'arrived');
   step('Room 2 got it by itself, with the page already open');
   await room2.click('#play-flip');
   await room2.waitForSelector('#play-flip[data-playing]', { timeout: 5000 });
@@ -125,6 +136,7 @@ try {
   await shot(room2, 'room2-celebrate');
   await room1.waitForSelector('.celebrate-tint', { timeout: 3000 });
   expect(/Room 2 got secret song #1 right!/.test(await room1.textContent('#msg')), 'room1 told it was right');
+  said.right = [await alan(room2, 'right'), await alan(room1, 'right')];
   await shot(room1, 'room1-celebrate');
   await room2.waitForFunction(() => !document.querySelector('.celebrate-tint, .celebrate-confetti'), null, { timeout: 4000 });
   step('right guess: confetti and gold tint in Room 2 and in Room 1, gone after about 3 s');
@@ -146,6 +158,10 @@ try {
   await room1.waitForFunction(() => /got it wrong/.test(document.querySelector('#msg').textContent), null, { timeout: 3000 });
   await room1.waitForTimeout(400);
   expect(!(await room1.$('.celebrate-tint')) && !(await room2.$('.celebrate-tint')), 'no celebration for a wrong guess');
+  said.wrong = [await alan(room2, 'wrong'), await alan(room1, 'wrong')];
+  await shot(room1, 'room1-wrong');
+  for (const [k, v] of Object.entries(said)) console.log(`    Alan (${k}): ${[].concat(v).join(' / ')}`);
+  step('Alan showed up at every moment, in both rooms for right and wrong guesses');
   step('second recording arrived live; wrong guess: no confetti, Room 1 told it was wrong; score 1 of 2');
 
   const late = await open(link2, 'late-guesser');

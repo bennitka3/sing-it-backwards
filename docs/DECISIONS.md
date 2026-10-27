@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-10-27: Alan Cumming as the host
+
+ben: "add … little cutout faces of Alan Cumming wearing different outfits and saying his taglines at appropriate
+places in the flow." He saw a mock-up first, then: change the wrong-guess line ("don't want them to think they're
+banished"), "add some more options that he would say for all of these", and "both rooms should also be notified
+when room 2 gets a wrong guess. By alan".
+
+- **Photo:** the only properly licensed one found: "FM and Alan Cumming in NY-4 (cropped)", Scottish Government,
+  CC BY 2.0, via Wikimedia Commons. Cut out as a small sticker (176x240, `img/alan-head.png`), credited on every page.
+  Not used: show stills and press photos (owned by the network and photographers; the site is public, so small
+  doesn't help) and AI-made photos of him in new outfits (fake photos of a real person).
+- **Outfits are drawn** (SVG) under the real head, one per moment, so it reads as a cartoon, not a fake photo.
+- **Lines** are written in his style, 5 per moment, picked at random; "Welcome to my castle" is the only one from the
+  show. A wrong guess is friendly, never "banished".
+- **Moments:** lobby, Room 1 draws a song, Room 1 sends, a recording reaches Room 2, a right guess (both rooms), a
+  wrong guess (both rooms). He pops up in the corner for 6 seconds and clicks pass through him.
+- **No sound bites:** the only "free" Traitors clips (myinstants.com) are cut from the show with no license, and no
+  openly licensed recording of his voice exists. Option on the table: ben or a colleague records the lines.
+
+
 ## 2026-10-26: celebrate a right guess in both rooms
 
 ben (after testing live on his work laptop): "when room 2 gets it right can you add confetti and screen background

@@ -39,9 +39,12 @@
     </ol>
     <p class="small muted">Headphones help in Room 1, so the backwards song doesn't leak into the recording. Recordings are kept for the game in a small free database (Google Firebase) and nowhere else.</p>
   </section>
+  <p class="photo-credit">Alan Cumming photo: <a href="https://commons.wikimedia.org/wiki/File:FM_and_Alan_Cumming_in_NY-4_(cropped).jpg" target="_blank" rel="noopener">Scottish Government</a>, <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener">CC BY 2.0</a>, cut out with drawn outfits. Not affiliated with Alan Cumming or The Traitors.</p>
 </main>
 <script type="module">
   import { newGameCode } from './live.js';
+  import { showAlan } from './alan.js';
+  setTimeout(() => showAlan('lobby'), 600);
   const base = location.href.replace(/[#?].*$/, '').replace(/index\.html$/, '');
   document.getElementById('new-game').onclick = () => {
     const code = newGameCode();

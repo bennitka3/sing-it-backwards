@@ -183,3 +183,27 @@ input[type="file"] { display: none; }
 @keyframes tint { 0% { opacity: 0; } 12% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
 .celebrate-confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 51; }
 @media (prefers-reduced-motion: reduce) { .celebrate-tint { animation: none !important; opacity: 1; } }
+/* The host (alan.js): pops up in the bottom corner for a few seconds. Clicks pass through it. */
+.alan { position: fixed; z-index: 60; pointer-events: none; display: grid; justify-items: center; gap: 6px; width: 240px;
+  right: max(12px, env(safe-area-inset-right, 0px)); bottom: env(safe-area-inset-bottom, 0px); }
+.alan.in { animation: alan-in 0.45s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes alan-in { from { transform: translateY(70%); opacity: 0; } to { transform: none; opacity: 1; } }
+.alan-bubble { position: relative; margin: 0; background: var(--parchment); color: var(--parchment-ink); font: 700 16px/1.25 var(--display);
+  padding: 10px 14px; border-radius: 14px; text-align: center; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4); }
+.alan-bubble::after { content: ""; position: absolute; bottom: -10px; left: 50%; margin-left: -10px; border: 10px solid transparent; border-bottom: 0; border-top-color: var(--parchment); }
+.alan-figure { position: relative; width: 150px; height: 225px; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5)); }
+.alan-figure svg, .alan-figure img { position: absolute; left: 0; width: 150px; }
+.alan-back { top: 0; height: 225px; }
+.alan-figure img { top: 10px; left: 9px; width: 132px; }
+.alan-front { top: 147px; height: 78px; }
+.photo-credit { font-size: 12px; color: var(--muted); }
+.photo-credit a { color: inherit; }
+@media (max-width: 600px) {
+  .alan { width: 190px; }
+  .alan-bubble { font-size: 14px; }
+  .alan-figure { width: 110px; height: 165px; }
+  .alan-figure svg { width: 110px; }
+  .alan-back { height: 165px; }
+  .alan-figure img { top: 7px; left: 7px; width: 96px; }
+  .alan-front { top: 108px; height: 57px; }
+}

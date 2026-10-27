@@ -3,6 +3,7 @@ import { SONGS } from './songs.js';
 import { deck, wallOf } from './deck.js';
 import { liveEnabled, watchLive, watchResults, sendResult, gameCode } from './live.js';
 import { celebrate } from './celebrate.js';
+import { showAlan } from './alan.js';
 
 // recordings: [{ id, player, number, songId, wall, guess, wav: ArrayBuffer }], kept in this browser.
 let recordings = [];
@@ -51,7 +52,7 @@ function addRecording(wav, label, quiet) {
 async function addFiles(files) {
   let added = false;
   for (const f of files) added = addRecording(await f.arrayBuffer(), f.name) || added;
-  if (added) { pending = null; say(''); await persist(); }
+  if (added) { pending = null; say(''); await persist(); showAlan('arrived'); }
   render();
 }
 
@@ -68,7 +69,7 @@ async function connect() {
   $('#live-status').textContent = `Game ${game} · connecting…`;
   stopWatching = await watchLive(game, async (doc) => {
     $('#live-status').textContent = `Game ${game} · live: recordings appear by themselves`;
-    if (addRecording(fromBase64(doc.payload), 'A recording', true)) { chime(); await persist(); render(); }
+    if (addRecording(fromBase64(doc.payload), 'A recording', true)) { chime(); await persist(); render(); showAlan('arrived'); }
   }, () => {
     $('#live-status').textContent = `Game ${game} · couldn't connect. This network may block it; Room 1 can send files through your chat instead.`;
   });
@@ -80,7 +81,8 @@ async function connect() {
     if (r.id === selected) pending = null;
     await persist();
     render();
-    if (fresh && res.correct) celebrate();
+    if (fresh && res.correct) { celebrate(); showAlan('right'); }
+    else if (fresh) showAlan('wrong');
   });
   setTimeout(() => {
     if (/connecting/.test($('#live-status').textContent)) $('#live-status').textContent = `Game ${game} · live: waiting for Room 1`;
@@ -181,7 +183,7 @@ $('#lock').onclick = async () => {
   pending = null;
   await persist();
   render();
-  if (r.guess === r.songId) celebrate();
+  if (r.guess === r.songId) { celebrate(); showAlan('right'); } else showAlan('wrong');
   // Tell Room 1 (and any other Room 2 page) how it went. If the database refuses, the game still works here.
   const game = gameCode();
   if (game && liveEnabled()) sendResult(game, r.id, { number: Number(r.number) || 0, guess: r.guess, correct: r.guess === r.songId }).catch(() => {});

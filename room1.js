@@ -2,6 +2,7 @@ import { $, play, stop, reverse, songAudio, Recorder, fmtTime, micAvailable, enc
 import { deck as fullDeck, wallOf } from './deck.js';
 import { liveEnabled, sendLive, watchResults, gameCode } from './live.js';
 import { celebrate } from './celebrate.js';
+import { showAlan } from './alan.js';
 
 const deck = fullDeck();
 let game = gameCode();
@@ -39,8 +40,8 @@ async function listen() {
   if (!game || !liveEnabled()) return;
   stopResults = await watchResults(game, (res, fresh) => {
     if (!fresh) return;
-    if (res.correct) { celebrate(); say(`Room 2 got secret song #${res.number} right!`); }
-    else say(`Room 2 guessed secret song #${res.number}, and got it wrong.`);
+    if (res.correct) { celebrate(); showAlan('right'); say(`Room 2 got secret song #${res.number} right!`); }
+    else { showAlan('wrong'); say(`Room 2 guessed secret song #${res.number}, and got it wrong.`); }
   });
 }
 
@@ -83,6 +84,7 @@ async function drawSong() {
   $('#play-back').disabled = false;
   $('#play-back').textContent = '▶ Play it backwards';
   $('#rec').disabled = false;
+  showAlan('drawn');
   take = null;
   $('#take').hidden = true;
 }
@@ -190,6 +192,7 @@ $('#send').onclick = async () => {
   try {
     await sendLive(game, { player: rec.player, number: rec.number, payload: await toBase64(rec.blob) });
     finish(`Sent! Room 2 has secret song #${rec.number}. Draw another song whenever you're ready.`);
+    showAlan('sent');
   } catch {
     finish("It couldn't be sent live, maybe this network blocks it. Save it as a file and drop it in your team chat instead.", rec);
   } finally {

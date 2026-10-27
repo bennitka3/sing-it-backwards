@@ -19,9 +19,11 @@ function showLinks() {
   $('code').textContent = code;
   $('link1').textContent = l1;
   $('link2').textContent = l2;
-  $('door1').href = l1;
-  $('door2').href = l2;
   $('links').hidden = false;
+  // The links are now the thing to act on: the start button steps back to a small one below them.
+  $('new-game').textContent = 'Start another game';
+  $('new-game').className = 'sm';
+  $('links').after($('new-game').parentElement);
   const g = games.find((x) => x.code === code);
   if (g && (g.p1 !== plays('plays1', 3) || g.p2 !== plays('plays2', 2))) { g.p1 = plays('plays1', 3); g.p2 = plays('plays2', 2); saveGames(); renderGames(); }
 }
@@ -33,7 +35,11 @@ $('new-game').onclick = () => {
   showLinks();
   renderGames();
 };
-for (const id of ['plays1', 'plays2']) $(id).addEventListener('input', showLinks);
+function showSettings() {
+  const p1 = plays('plays1', 3), p2 = plays('plays2', 2);
+  $('settings-summary').textContent = `Room 1 hears the song ${p1} time${p1 === 1 ? '' : 's'}, Room 2 hears each recording ${p2} time${p2 === 1 ? '' : 's'}`;
+}
+for (const id of ['plays1', 'plays2']) $(id).addEventListener('input', () => { showSettings(); showLinks(); });
 
 async function copy(btn, text, selectEl) {
   try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied'; }

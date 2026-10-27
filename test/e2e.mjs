@@ -97,7 +97,9 @@ try {
   const link2 = await lobby.textContent('#link2');
   const code = await lobby.textContent('#code');
   expect(/room1\.html\?plays=3#[A-Z0-9]{4}$/.test(link1) && link2.endsWith('room2.html?plays=2#' + code), 'lobby links: ' + link1 + ' ' + link2);
+  await lobby.click('#settings summary');
   await lobby.fill('#plays1', '4');
+  expect((await lobby.textContent('#settings-summary')).startsWith('Room 1 hears the song 4 times'), 'settings line updates');
   expect((await lobby.textContent('#link1')).includes('?plays=4#'), 'changing the play count updates the link');
   await lobby.fill('#plays1', '3');
   step('lobby links carry the play limits (3 for Room 1, 2 for Room 2 by default; changing them updates the links)');
@@ -211,6 +213,7 @@ try {
   await lobby.reload();
   await lobby.waitForFunction((c) => document.querySelector(`#games tr[data-code="${c}"]`)?.cells[4].textContent.trim() === '1 of 2', code, { timeout: 5000 });
   const other = await open('/', 'other-host');
+  await other.click('#follow summary');
   await other.fill('#watch-code', code.toLowerCase());
   await other.click('#watch button[type=submit]');
   await other.waitForFunction((c) => document.querySelector(`#games tr[data-code="${c}"]`)?.cells[2].textContent.trim() === '2', code, { timeout: 5000 });

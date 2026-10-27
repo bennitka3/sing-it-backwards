@@ -1,5 +1,17 @@
 # Decisions
 
+## 2026-10-27: one way to start a game
+
+ben: "there are two ways to start games both competing for attention on the host page. can we simplify? I want the
+hosts job easy."
+
+- The lobby has one action: a big "Start a new game" button. After pressing it, the game code and the two links to
+  send (with Copy buttons) come first, and the button steps back to a small "Start another game" under them.
+- Removed the Room 1 / Room 2 cards: they opened the rooms without a game code, and players arrive by link anyway.
+- Folded away what hosts rarely need: game settings (play counts, summarised in one line), following another host's
+  game, and How to play.
+
+
 ## 2026-10-27: lobby scoreboard; no "new round" button
 
 ben: "Is there a way for the hosts to see the games that are open from the lobby, and their scores? and can you

@@ -75,7 +75,7 @@ async function alan(page, moment) {
 const expect = (ok, msg) => { if (!ok) throw new Error(msg); };
 const answerOf = (page, i) => page.evaluate((i) => new Promise((res) => {
   const q = indexedDB.open('sing-it-backwards');
-  q.onsuccess = () => { const g = q.result.transaction('kv').objectStore('kv').get('room2'); g.onsuccess = () => res(g.result[i].songId); };
+  q.onsuccess = () => { const g = q.result.transaction('kv').objectStore('kv').get('room2:' + location.hash.slice(1)); g.onsuccess = () => res(g.result[i].songId); };
 }), i);
 
 async function sing(room1, name, seconds = 2) {
@@ -96,7 +96,11 @@ try {
   const link1 = await lobby.textContent('#link1');
   const link2 = await lobby.textContent('#link2');
   const code = await lobby.textContent('#code');
-  expect(/room1\.html#[A-Z0-9]{4}$/.test(link1) && link2.endsWith('room2.html#' + code), 'lobby links: ' + link1);
+  expect(/room1\.html\?plays=3#[A-Z0-9]{4}$/.test(link1) && link2.endsWith('room2.html?plays=2#' + code), 'lobby links: ' + link1 + ' ' + link2);
+  await lobby.fill('#plays1', '4');
+  expect((await lobby.textContent('#link1')).includes('?plays=4#'), 'changing the play count updates the link');
+  await lobby.fill('#plays1', '3');
+  step('lobby links carry the play limits (3 for Room 1, 2 for Room 2 by default; changing them updates the links)');
   const said = { lobby: await alan(lobby, 'lobby') };
   await shot(lobby, 'lobby');
   step(`lobby made game ${code} with Room 1 and Room 2 links`);
@@ -105,9 +109,11 @@ try {
   await room2.waitForFunction(() => /live/.test(document.querySelector('#live-status').textContent));
   const room1 = await open(link1, 'room1');
   expect((await room1.textContent('#game-code')) === code, 'room1 shows the game code');
+  expect((await room1.textContent('#plays-help')).startsWith('You can play it 3 times'), 'room1 says how many plays');
 
   await sing(room1, 'Alan');
   said.drawn = await alan(room1, 'drawn');
+  expect((await room1.textContent('#play-back')).includes('2 left'), 'after one play, 2 of 3 left: ' + await room1.textContent('#play-back'));
   await room1.click('#send');
   await room1.waitForSelector('#handoff:not([hidden])');
   said.sent = await alan(room1, 'sent');
@@ -121,8 +127,19 @@ try {
   await room2.waitForSelector('#inbox button', { timeout: 3000 });
   said.arrived = await alan(room2, 'arrived');
   step('Room 2 got it by itself, with the page already open');
+  expect((await room2.textContent('#plays-left')) === '2 of 2 plays left', 'room2 starts with 2 plays');
   await room2.click('#play-flip');
   await room2.waitForSelector('#play-flip[data-playing]', { timeout: 5000 });
+  await room2.click('#play-raw');
+  await room2.waitForSelector('#play-raw[data-playing]', { timeout: 5000 });
+  await room2.click('#play-raw');
+  await room2.waitForFunction(() => document.querySelector('#plays-left').textContent === '0 of 2 plays left'
+    && document.querySelector('#play-flip').disabled && document.querySelector('#play-raw').disabled, null, { timeout: 3000 });
+  expect((await room2.textContent('#play-flip')) === 'No plays left', 'room2 says no plays left');
+  await room2.reload();
+  await room2.waitForSelector('#inbox button');
+  expect(await room2.isDisabled('#play-flip'), 'reloading Room 2 must not reset its plays');
+  step('Room 2 gets 2 plays of the recording (flipped or as sung), and a reload does not reset them');
   const cards = await room2.$$eval('.card', (els) => els.length);
   expect(cards === 10, 'wall should have 10 cards, got ' + cards);
   const answer = await answerOf(room2, 0);
@@ -164,6 +181,27 @@ try {
   step('Alan showed up at every moment, in both rooms for right and wrong guesses');
   step('second recording arrived live; wrong guess: no confetti, Room 1 told it was wrong; score 1 of 2');
 
+  // Same computer, switching to another game: only that game's recordings show, and back again.
+  await room2.evaluate(() => { location.hash = '#QQQQ'; });
+  await room2.waitForFunction(() => !document.querySelector('#inbox button') && /QQQQ/.test(document.querySelector('#live-status').textContent));
+  await room2.evaluate((c) => { location.hash = '#' + c; }, code);
+  await room2.waitForSelector('#inbox button >> nth=1', { timeout: 3000 });
+  step('one computer switching between two games only sees each game\'s own recordings');
+  // Room 1 plays: 3 per song, then the button stops.
+  await room1.click('#draw');
+  await room1.waitForSelector('#play-back:not([disabled])', { timeout: 10000 });
+  for (let i = 0; i < 3; i++) {
+    await room1.click('#play-back');
+    await room1.waitForSelector('#play-back[data-playing]');
+    await room1.click('#play-back');
+    await room1.waitForSelector('#play-back:not([data-playing])');
+  }
+  expect(await room1.isDisabled('#play-back') && (await room1.textContent('#play-back')) === 'No plays left', 'room1 out of plays');
+  step('Room 1 gets 3 plays of each song backwards, then the button stops');
+  // Alan slides back down, then he's gone.
+  await room1.waitForSelector('.alan.out', { timeout: 8000 });
+  await room1.waitForSelector('.alan', { state: 'hidden', timeout: 2000 });
+  step('Alan slides back off the bottom of the screen when he leaves');
   const late = await open(link2, 'late-guesser');
   await late.waitForSelector('#inbox button >> nth=1', { timeout: 3000 });
   await late.waitForFunction(() => document.querySelector('#score').textContent === '1 of 2 right', null, { timeout: 3000 });

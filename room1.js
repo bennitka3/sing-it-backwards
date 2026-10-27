@@ -1,6 +1,6 @@
 import { $, play, stop, reverse, songAudio, Recorder, fmtTime, micAvailable, encodeWav, scramble, saveFile, toBase64 } from './audio.js';
 import { deck as fullDeck, wallOf } from './deck.js';
-import { liveEnabled, sendLive, watchResults, gameCode } from './live.js';
+import { liveEnabled, sendLive, watchResults, gameCode, playLimit } from './live.js';
 import { celebrate } from './celebrate.js';
 import { showAlan } from './alan.js';
 
@@ -24,8 +24,21 @@ function say(text, isError) {
 }
 
 // Round bookkeeping lives in this browser: which songs were dealt, and the running song number.
-const getRound = () => { try { return JSON.parse(localStorage.getItem('round')) || { used: [], count: 0 }; } catch { return { used: [], count: 0 }; } };
-const setRound = (r) => { try { localStorage.setItem('round', JSON.stringify(r)); } catch {} };
+// Kept per game, so a second game starts from song #1.
+const roundKey = () => 'round:' + (game || 'files');
+const getRound = () => { try { return JSON.parse(localStorage.getItem(roundKey())) || { used: [], count: 0 }; } catch { return { used: [], count: 0 }; } };
+const setRound = (r) => { try { localStorage.setItem(roundKey(), JSON.stringify(r)); } catch {} };
+
+// How many times Room 1 may play each drawn song backwards (the host sets it in the lobby).
+const PLAYS = playLimit(3);
+let playsLeft = PLAYS;
+$('#plays-help').textContent = `You can play it ${PLAYS} time${PLAYS === 1 ? '' : 's'} (stopping early still counts). Copy every sound, rhythm and pitch exactly as you hear it.`;
+function showPlays() {
+  const b = $('#play-back');
+  if (b.dataset.playing || !backwards) return;
+  b.disabled = playsLeft <= 0;
+  b.textContent = playsLeft > 0 ? `▶ Play it backwards (${playsLeft} left)` : 'No plays left';
+}
 
 function showGame() {
   $('#game-code').textContent = game || 'none';
@@ -81,8 +94,8 @@ async function drawSong() {
   } catch {
     return say("This song couldn't be played. Draw a different song.", true);
   }
-  $('#play-back').disabled = false;
-  $('#play-back').textContent = '▶ Play it backwards';
+  playsLeft = PLAYS;
+  showPlays();
   $('#rec').disabled = false;
   showAlan('drawn');
   take = null;
@@ -95,9 +108,11 @@ $('#play-back').onclick = () => {
   if (!backwards) return;
   const b = $('#play-back');
   if (b.dataset.playing) { stop(); return; }
+  if (playsLeft <= 0) return;
+  playsLeft -= 1;
   b.dataset.playing = '1';
   b.textContent = '■ Stop';
-  play(backwards, () => { delete b.dataset.playing; b.textContent = '▶ Play it backwards'; });
+  play(backwards, () => { delete b.dataset.playing; showPlays(); });
 };
 
 $('#rec').onclick = async () => {

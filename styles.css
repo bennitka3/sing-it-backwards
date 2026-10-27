@@ -209,3 +209,11 @@ input[type="file"] { display: none; }
   .alan-figure img { top: 7px; left: 7px; width: 96px; }
   .alan-front { top: 108px; height: 57px; }
 }
+
+/* Lobby: one big start button; settings and how-to folded away */
+button.big { font-size: 20px; padding: 18px 32px; }
+details > summary { cursor: pointer; color: var(--muted); font-size: 15px; }
+details > summary:hover { color: var(--gold); }
+.how-panel > summary { list-style-position: inside; }
+.how-panel > summary h2 { display: inline; color: var(--ink); }
+.how-panel[open] > summary { margin-bottom: 4px; }

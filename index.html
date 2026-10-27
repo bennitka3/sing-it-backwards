@@ -15,43 +15,44 @@
     <h1>Hear it backwards.<br>Sing it backwards.<br>Find the card.</h1>
     <p class="lede">A two-room game, inspired by the backwards-song challenge on The Traitors. Room 1 hears a song played in reverse and copies the sounds. Room 2 only hears that recording, flipped the right way round, and has to find the song on the wall.</p>
   </section>
-  <section class="panel">
-    <span class="step-label">Start a game</span>
-    <div class="row" style="align-items:end">
-      <label for="plays1">Room 1 hears the song<span class="row" style="gap:6px"><input id="plays1" type="number" min="1" max="20" value="3"> times</span></label>
-      <label for="plays2">Room 2 hears each recording<span class="row" style="gap:6px"><input id="plays2" type="number" min="1" max="20" value="2"> times</span></label>
-    </div>
-    <div class="row"><button id="new-game" class="primary">Start a new game</button><span class="muted small">Gives you a game code and two links to share.</span></div>
+  <section class="panel start">
+    <div class="row"><button id="new-game" class="primary big">Start a new game</button></div>
     <div id="links" hidden style="display:grid;gap:10px">
-      <p>Game code <strong id="code" class="timer" style="font-size:22px"></strong></p>
-      <div class="row"><span style="min-width:0;overflow-wrap:anywhere">Room 1 (singers): <code id="link1"></code></span><button class="sm" data-copy="link1">Copy</button></div>
-      <div class="row"><span style="min-width:0;overflow-wrap:anywhere">Room 2 (guessers): <code id="link2"></code></span><button class="sm" data-copy="link2">Copy</button></div>
+      <p>Game <strong id="code" class="timer" style="font-size:22px"></strong> is ready. Send these two links:</p>
+      <div class="row"><span style="min-width:0;overflow-wrap:anywhere"><strong>Singers (Room 1):</strong> <code id="link1"></code></span><button class="sm" data-copy="link1">Copy</button></div>
+      <div class="row"><span style="min-width:0;overflow-wrap:anywhere"><strong>Guessers (Room 2):</strong> <code id="link2"></code></span><button class="sm" data-copy="link2">Copy</button></div>
     </div>
+    <details id="settings">
+      <summary>Game settings: <span id="settings-summary">Room 1 hears the song 3 times, Room 2 hears each recording 2 times</span></summary>
+      <div class="row" style="align-items:end;margin-top:12px">
+        <label for="plays1">Room 1 hears the song<span class="row" style="gap:6px"><input id="plays1" type="number" min="1" max="20" value="3"> times</span></label>
+        <label for="plays2">Room 2 hears each recording<span class="row" style="gap:6px"><input id="plays2" type="number" min="1" max="20" value="2"> times</span></label>
+      </div>
+    </details>
   </section>
   <section class="panel" id="games-panel">
     <div class="row" style="justify-content:space-between"><h2>Your games</h2><span class="small muted">Started on this computer, with live scores</span></div>
     <div class="scroll-x"><table class="results"><thead><tr><th>Game</th><th>Started</th><th>Sent</th><th>Guessed</th><th>Right</th><th></th></tr></thead>
       <tbody id="games"><tr><td colspan="6" class="muted">No games yet. Start one above.</td></tr></tbody></table></div>
-    <form id="watch" class="row" style="align-items:end">
-      <label for="watch-code">Follow another host's game<input id="watch-code" type="text" maxlength="12" placeholder="Game code" autocomplete="off"></label>
-      <button class="sm" type="submit">Add</button>
-    </form>
+    <details id="follow">
+      <summary>Follow another host's game</summary>
+      <form id="watch" class="row" style="align-items:end;margin-top:10px">
+        <label for="watch-code">Their game code<input id="watch-code" type="text" maxlength="12" placeholder="e.g. K7QF" autocomplete="off"></label>
+        <button class="sm" type="submit">Add</button>
+      </form>
+    </details>
   </section>
-  <nav class="doors">
-    <a class="door" id="door1" href="room1.html"><span class="n">Room 1</span><h2>The Singer</h2><span class="muted">Listen to a song in reverse, sing it back, send it on.</span></a>
-    <a class="door" id="door2" href="room2.html"><span class="n">Room 2</span><h2>The Wall</h2><span class="muted">Hear the flipped recording and pin the right card.</span></a>
-  </nav>
-  <section class="panel">
-    <h2>How to play</h2>
+  <details class="panel how-panel">
+    <summary><h2>How to play</h2></summary>
     <ol class="how">
       <li>Everyone joins your usual video call. Nothing to install and no logins.</li>
       <li>The host presses <strong>Start a new game</strong> and sends the Room 1 link to the singers and the Room 2 link to the guessers.</li>
-      <li>Room 1 draws a secret song (the famous first line, about 7 seconds), plays it backwards (3 times unless you change it above), records themselves copying the backwards sounds and presses Send.</li>
+      <li>Room 1 draws a secret song (the famous first line, about 7 seconds), plays it backwards (3 times unless you change Game settings), records themselves copying the backwards sounds and presses Send.</li>
       <li>The recording pops up on every open Room 2 page. They play it flipped (2 times unless you change it). Done well, the gibberish turns back into the song.</li>
       <li>Room 2 pins one card on the wall, and the page says whether they got it right.</li>
     </ol>
     <p class="small muted">Headphones help in Room 1, so the backwards song doesn't leak into the recording. Recordings are kept for the game in a small free database (Google Firebase) and nowhere else.</p>
-  </section>
+  </details>
   <p class="photo-credit">Alan Cumming photo: <a href="https://commons.wikimedia.org/wiki/File:FM_and_Alan_Cumming_in_NY-4_(cropped).jpg" target="_blank" rel="noopener">Scottish Government</a>, <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener">CC BY 2.0</a>, cut out with drawn outfits. Not affiliated with Alan Cumming or The Traitors.</p>
 </main>
 <script type="module" src="lobby.js"></script>

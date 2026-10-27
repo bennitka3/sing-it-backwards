@@ -6,7 +6,7 @@ It must work on locked-down work computers: nothing to install, no logins for pl
 through a free Firebase database (`live.js`, `firebase-config.js`, `firestore.rules`, setup in `docs/LIVE-SETUP.md`);
 when that's off or blocked, they go as files through the players' chat. Why: `docs/DECISIONS.md`.
 
-- Pages: `index.html` (lobby, makes game codes), `room1.*` (singer), `room2.*` (wall). Shared code: `audio.js`
+- Pages: `index.html` + `lobby.js` (lobby: game codes, play limits, "Your games" scoreboard), `room1.*` (singer), `room2.*` (wall). Shared code: `audio.js`
   (reverse, synth, mic to WAV, the scrambled answer chunk, browser storage), `deck.js`, `songs.js`, `live.js`, `celebrate.js`, `alan.js` (the host pop-up and his lines).
 - The Alan Cumming photo is CC BY 2.0: keep the credit line on every page. Only openly licensed images or audio of
   him; no show clips, press photos or AI-made pictures of him (`docs/DECISIONS.md`, 2026-10-27).

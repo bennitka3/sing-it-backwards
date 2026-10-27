@@ -28,6 +28,15 @@
       <div class="row"><span style="min-width:0;overflow-wrap:anywhere">Room 2 (guessers): <code id="link2"></code></span><button class="sm" data-copy="link2">Copy</button></div>
     </div>
   </section>
+  <section class="panel" id="games-panel">
+    <div class="row" style="justify-content:space-between"><h2>Your games</h2><span class="small muted">Started on this computer, with live scores</span></div>
+    <div class="scroll-x"><table class="results"><thead><tr><th>Game</th><th>Started</th><th>Sent</th><th>Guessed</th><th>Right</th><th></th></tr></thead>
+      <tbody id="games"><tr><td colspan="6" class="muted">No games yet. Start one above.</td></tr></tbody></table></div>
+    <form id="watch" class="row" style="align-items:end">
+      <label for="watch-code">Follow another host's game<input id="watch-code" type="text" maxlength="12" placeholder="Game code" autocomplete="off"></label>
+      <button class="sm" type="submit">Add</button>
+    </form>
+  </section>
   <nav class="doors">
     <a class="door" id="door1" href="room1.html"><span class="n">Room 1</span><h2>The Singer</h2><span class="muted">Listen to a song in reverse, sing it back, send it on.</span></a>
     <a class="door" id="door2" href="room2.html"><span class="n">Room 2</span><h2>The Wall</h2><span class="muted">Hear the flipped recording and pin the right card.</span></a>
@@ -45,32 +54,6 @@
   </section>
   <p class="photo-credit">Alan Cumming photo: <a href="https://commons.wikimedia.org/wiki/File:FM_and_Alan_Cumming_in_NY-4_(cropped).jpg" target="_blank" rel="noopener">Scottish Government</a>, <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener">CC BY 2.0</a>, cut out with drawn outfits. Not affiliated with Alan Cumming or The Traitors.</p>
 </main>
-<script type="module">
-  import { newGameCode } from './live.js';
-  import { showAlan } from './alan.js';
-  setTimeout(() => showAlan('lobby'), 600);
-  const base = location.href.replace(/[#?].*$/, '').replace(/index\.html$/, '');
-  let code = null;
-  const plays = (id, d) => { const n = parseInt(document.getElementById(id).value, 10); return n >= 1 && n <= 20 ? n : d; };
-  function showLinks() {
-    if (!code) return;
-    // The play limits ride in each room's link, so changing them here updates the links to share.
-    const l1 = `${base}room1.html?plays=${plays('plays1', 3)}#${code}`, l2 = `${base}room2.html?plays=${plays('plays2', 2)}#${code}`;
-    document.getElementById('code').textContent = code;
-    document.getElementById('link1').textContent = l1;
-    document.getElementById('link2').textContent = l2;
-    document.getElementById('door1').href = l1;
-    document.getElementById('door2').href = l2;
-    document.getElementById('links').hidden = false;
-  }
-  document.getElementById('new-game').onclick = () => { code = newGameCode(); showLinks(); };
-  for (const id of ['plays1', 'plays2']) document.getElementById(id).addEventListener('input', showLinks);
-  document.querySelectorAll('[data-copy]').forEach((b) => b.onclick = async () => {
-    const text = document.getElementById(b.dataset.copy).textContent;
-    try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; }
-    catch { getSelection().selectAllChildren(document.getElementById(b.dataset.copy)); b.textContent = 'Press Ctrl+C'; }
-    setTimeout(() => (b.textContent = 'Copy'), 2000);
-  });
-</script>
+<script type="module" src="lobby.js"></script>
 </body>
 </html>

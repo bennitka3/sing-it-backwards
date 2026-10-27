@@ -1,5 +1,18 @@
 # Decisions
 
+## 2026-10-27: lobby scoreboard; no "new round" button
+
+ben: "Is there a way for the hosts to see the games that are open from the lobby, and their scores? and can you
+explain why room one would have to start a new round? don't they just keep drawing?"
+
+- **"Your games" in the lobby:** every game started on that computer, with live counts (sent, guessed, right) and
+  each room's link to copy. Another host's game can be followed by typing its code. The database still can't list
+  all games, so nobody can browse codes and listen in; the cost is that a host only sees games started on their own
+  computer unless they add the code.
+- **Room 1's "Start a new round" is gone:** a new game is the fresh start (numbering is per game), and draws already
+  skip used songs until all 10 are used, then recycle.
+
+
 ## 2026-10-27: play limits, games kept apart on one computer, Alan slides off
 
 ben: "add a control in the main page of how many plays the recording team and reviewing team get of the tune and the

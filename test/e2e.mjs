@@ -202,14 +202,28 @@ try {
   await room1.waitForSelector('.alan.out', { timeout: 8000 });
   await room1.waitForSelector('.alan', { state: 'hidden', timeout: 2000 });
   step('Alan slides back off the bottom of the screen when he leaves');
+  // The host's lobby (open since the start) keeps a live scoreboard of the game.
+  await lobby.waitForFunction((c) => {
+    const row = document.querySelector(`#games tr[data-code="${c}"]`);
+    return row && [...row.cells].slice(2, 5).map((td) => td.textContent.trim()).join('|') === '2|2|1 of 2';
+  }, code, { timeout: 5000 });
+  await shot(lobby, 'lobby-scores');
+  await lobby.reload();
+  await lobby.waitForFunction((c) => document.querySelector(`#games tr[data-code="${c}"]`)?.cells[4].textContent.trim() === '1 of 2', code, { timeout: 5000 });
+  const other = await open('/', 'other-host');
+  await other.fill('#watch-code', code.toLowerCase());
+  await other.click('#watch button[type=submit]');
+  await other.waitForFunction((c) => document.querySelector(`#games tr[data-code="${c}"]`)?.cells[2].textContent.trim() === '2', code, { timeout: 5000 });
+  step('lobby scoreboard: 2 sent, 2 guessed, 1 right, live and after a reload; another host can follow it by code');
+  expect(!(await room1.$('#new-round')), 'Room 1 has no new-round button');
   const late = await open(link2, 'late-guesser');
   await late.waitForSelector('#inbox button >> nth=1', { timeout: 3000 });
   await late.waitForFunction(() => document.querySelector('#score').textContent === '1 of 2 right', null, { timeout: 3000 });
   expect(!(await late.$('.celebrate-tint')), 'old results must not set off confetti on a page opened later');
   step("a Room 2 player who opens the page late gets both recordings and the team's guesses, without old confetti");
-  const other = await open(link2.replace(/#.*/, '#ZZZZ'), 'other-game');
-  await other.waitForTimeout(1200);
-  expect(!(await other.$('#inbox button')), 'another game must not see these recordings');
+  const otherGame = await open(link2.replace(/#.*/, '#ZZZZ'), 'other-game');
+  await otherGame.waitForTimeout(1200);
+  expect(!(await otherGame.$('#inbox button')), 'another game must not see these recordings');
   step('a different game code sees none of them');
 
   const tuneLens = await room1.evaluate(async () => {

@@ -66,7 +66,6 @@ $('#join').addEventListener('submit', (e) => {
 });
 window.addEventListener('hashchange', () => { game = gameCode(); showGame(); listen(); });
 
-$('#new-round').onclick = () => { setRound({ used: [], count: 0 }); say('New round: every song is back in the draw and numbering restarts at 1.'); };
 
 async function drawSong() {
   say('');

@@ -1,7 +1,7 @@
 import { $, esc, play, stop, reverse, parseWav, unscramble, songAudio, kvGet, kvSet, fromBase64 } from './audio.js';
 import { SONGS } from './songs.js';
 import { deck, wallOf } from './deck.js';
-import { liveEnabled, watchLive, watchResults, sendResult, gameCode } from './live.js';
+import { liveEnabled, watchLive, watchResults, sendResult, gameCode, playLimit } from './live.js';
 import { celebrate } from './celebrate.js';
 import { showAlan } from './alan.js';
 
@@ -33,7 +33,11 @@ function wall() {
 }
 const titleOf = (id) => wall().find((c) => c.id === id)?.title || 'an unknown song';
 const current = () => recordings.find((r) => r.id === selected);
-const persist = () => kvSet('room2', recordings);
+// Each game keeps its own list in this browser; recordings opened as files without a game go under 'files'.
+const storeKey = () => 'room2:' + (gameCode() || 'files');
+const persist = () => kvSet(storeKey(), recordings);
+// How many times this page may play each recording (the host sets it in the lobby).
+const PLAYS = playLimit(2);
 
 // Add one recording (a Room 1 WAV). Returns true if it was new.
 function addRecording(wav, label, quiet) {
@@ -89,7 +93,17 @@ async function connect() {
   }, 4000);
 }
 $('#join').addEventListener('submit', (e) => { e.preventDefault(); location.hash = $('#code-input').value.trim(); });
-window.addEventListener('hashchange', connect);
+async function loadGame() {
+  stop();
+  const saved = await kvGet(storeKey());
+  recordings = Array.isArray(saved) ? saved : [];
+  audioCache.clear();
+  pending = null;
+  selected = recordings.find((r) => !r.guess)?.id || recordings[recordings.length - 1]?.id || null;
+  render();
+  connect();
+}
+window.addEventListener('hashchange', loadGame);
 
 function chime() {
   try {
@@ -146,6 +160,7 @@ function render() {
     </button>`;
   }).join('');
   $('#wall').querySelectorAll('.card').forEach((c) => c.onclick = () => { pending = c.dataset.id; render(); $('#lock').focus(); });
+  showPlays();
 }
 
 function sung(r) {
@@ -153,26 +168,42 @@ function sung(r) {
   return audioCache.get(r.id);
 }
 
-function toggle(btn, label, getBuffer) {
+// counted: plays of the team's recording use up this page's allowance for that recording.
+function toggle(btn, label, getBuffer, counted) {
   btn.onclick = async () => {
     if (btn.dataset.playing) { stop(); return; }
     const r = current();
     if (!r) return;
+    if (counted && (r.plays || 0) >= PLAYS) return;
     try {
       btn.disabled = true;
       const buf = await getBuffer(r);
+      if (counted) { r.plays = (r.plays || 0) + 1; persist(); showPlays(); }
       btn.dataset.playing = '1';
       btn.textContent = '■ Stop';
-      play(buf, () => { delete btn.dataset.playing; btn.textContent = label; });
+      play(buf, () => { delete btn.dataset.playing; btn.textContent = label; showPlays(); });
     } catch {
       say("That audio couldn't be played.", true);
     } finally {
       btn.disabled = false;
+      showPlays();
     }
   };
 }
-toggle($('#play-flip'), '▶ Play it flipped', async (r) => reverse(sung(r)));
-toggle($('#play-raw'), 'Hear it as sung', async (r) => sung(r));
+// Plays left for the selected recording; both ways of hearing it share the allowance.
+function showPlays() {
+  const r = current();
+  const left = r ? Math.max(0, PLAYS - (r.plays || 0)) : PLAYS;
+  const out = left === 0 && !(r && r.guess) ? 'No plays left' : null;
+  for (const b of [$('#play-flip'), $('#play-raw')]) {
+    if (b.dataset.playing) continue;
+    b.disabled = !r || (left === 0 && !r.guess);
+  }
+  if (!$('#play-flip').dataset.playing) $('#play-flip').textContent = out || '▶ Play it flipped';
+  $('#plays-left').textContent = r ? (r.guess ? '' : `${left} of ${PLAYS} plays left`) : '';
+}
+toggle($('#play-flip'), '▶ Play it flipped', async (r) => reverse(sung(r)), true);
+toggle($('#play-raw'), 'Hear it as sung', async (r) => sung(r), true);
 toggle($('#play-real'), '▶ Hear the real song', (r) => songAudio(SONGS.find((s) => s.id === r.songId)));
 
 $('#cancel').onclick = () => { pending = null; render(); };
@@ -199,9 +230,5 @@ $('#clear-yes').onclick = async () => {
 };
 
 (async () => {
-  const saved = await kvGet('room2');
-  if (Array.isArray(saved)) recordings = saved;
-  selected = recordings.find((r) => !r.guess)?.id || recordings[recordings.length - 1]?.id || null;
-  render();
-  connect();
+  await loadGame();
 })();

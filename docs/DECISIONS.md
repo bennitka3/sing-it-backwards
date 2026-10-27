@@ -1,5 +1,21 @@
 # Decisions
 
+## 2026-10-27: play limits, games kept apart on one computer, Alan slides off
+
+ben: "add a control in the main page of how many plays the recording team and reviewing team get of the tune and the
+team's recording? by default set it to 3 and 2 respectively." Also: other games' recordings showed up; "make him move
+off screen the same direction he came from"; Room 1's help text should say the real number of plays; drop the
+"Your take will sound like nonsense…" line.
+
+- **Play limits** are set in the lobby and ride in each room's link (`?plays=3`, `?plays=2`). Room 1's count is per
+  drawn song, and stopping early still counts. Room 2's count is per recording, shared by "Play it flipped" and "Hear
+  it as sung", kept across a reload, and lifted once the team has guessed. A player could edit the link to cheat;
+  fine for a party game.
+- **The cross-game bug:** Room 2 kept one list in the browser for every game, so opening a second game on the same
+  computer still showed the first game's recordings. Each game now has its own list (and Room 1 its own numbering).
+  The database itself always kept games apart (tested live 2026-10-26).
+
+
 ## 2026-10-27: Alan Cumming as the host
 
 ben: "add … little cutout faces of Alan Cumming wearing different outfits and saying his taglines at appropriate

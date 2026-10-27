@@ -187,7 +187,9 @@ input[type="file"] { display: none; }
 .alan { position: fixed; z-index: 60; pointer-events: none; display: grid; justify-items: center; gap: 6px; width: 240px;
   right: max(12px, env(safe-area-inset-right, 0px)); bottom: env(safe-area-inset-bottom, 0px); }
 .alan.in { animation: alan-in 0.45s cubic-bezier(.2, 1.4, .4, 1) both; }
-@keyframes alan-in { from { transform: translateY(70%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes alan-in { from { transform: translateY(110%); } to { transform: none; } }
+.alan.out { animation: alan-out 0.45s cubic-bezier(.5, -0.4, .8, .4) both; }
+@keyframes alan-out { from { transform: none; } to { transform: translateY(110%); } }
 .alan-bubble { position: relative; margin: 0; background: var(--parchment); color: var(--parchment-ink); font: 700 16px/1.25 var(--display);
   padding: 10px 14px; border-radius: 14px; text-align: center; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4); }
 .alan-bubble::after { content: ""; position: absolute; bottom: -10px; left: 50%; margin-left: -10px; border: 10px solid transparent; border-bottom: 0; border-top-color: var(--parchment); }

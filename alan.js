@@ -78,7 +78,7 @@ export function showAlan(moment) {
     box.querySelector('.alan-bubble').textContent = pick(moment);
     box.dataset.moment = moment;
     box.hidden = false;
-    box.classList.remove('in');
+    box.classList.remove('in', 'out');
     void box.offsetWidth; // restart the slide-in
     box.classList.add('in');
     clearTimeout(hideTimer);
@@ -86,6 +86,13 @@ export function showAlan(moment) {
   } catch {}
 }
 
+// Slide back down the way he came, then disappear.
 function hide() {
-  if (box) { box.classList.remove('in'); box.hidden = true; }
+  if (!box || box.hidden) return;
+  box.classList.remove('in');
+  box.classList.add('out');
+  const done = () => { if (!box.classList.contains('out')) return; box.classList.remove('out'); box.hidden = true; }; // not if he popped up again meanwhile
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return done();
+  box.addEventListener('animationend', done, { once: true });
+  setTimeout(() => { if (box.classList.contains('out')) done(); }, 800); // in case the animation never runs
 }

@@ -17,6 +17,10 @@
   </section>
   <section class="panel">
     <span class="step-label">Start a game</span>
+    <div class="row" style="align-items:end">
+      <label for="plays1">Room 1 hears the song<span class="row" style="gap:6px"><input id="plays1" type="number" min="1" max="20" value="3"> times</span></label>
+      <label for="plays2">Room 2 hears each recording<span class="row" style="gap:6px"><input id="plays2" type="number" min="1" max="20" value="2"> times</span></label>
+    </div>
     <div class="row"><button id="new-game" class="primary">Start a new game</button><span class="muted small">Gives you a game code and two links to share.</span></div>
     <div id="links" hidden style="display:grid;gap:10px">
       <p>Game code <strong id="code" class="timer" style="font-size:22px"></strong></p>
@@ -33,8 +37,8 @@
     <ol class="how">
       <li>Everyone joins your usual video call. Nothing to install and no logins.</li>
       <li>The host presses <strong>Start a new game</strong> and sends the Room 1 link to the singers and the Room 2 link to the guessers.</li>
-      <li>Room 1 draws a secret song (the famous first line, about 7 seconds), plays it backwards as often as they like, records themselves copying the backwards sounds and presses Send.</li>
-      <li>The recording pops up on every open Room 2 page. They play it flipped. Done well, the gibberish turns back into the song.</li>
+      <li>Room 1 draws a secret song (the famous first line, about 7 seconds), plays it backwards (3 times unless you change it above), records themselves copying the backwards sounds and presses Send.</li>
+      <li>The recording pops up on every open Room 2 page. They play it flipped (2 times unless you change it). Done well, the gibberish turns back into the song.</li>
       <li>Room 2 pins one card on the wall, and the page says whether they got it right.</li>
     </ol>
     <p class="small muted">Headphones help in Room 1, so the backwards song doesn't leak into the recording. Recordings are kept for the game in a small free database (Google Firebase) and nowhere else.</p>
@@ -46,16 +50,21 @@
   import { showAlan } from './alan.js';
   setTimeout(() => showAlan('lobby'), 600);
   const base = location.href.replace(/[#?].*$/, '').replace(/index\.html$/, '');
-  document.getElementById('new-game').onclick = () => {
-    const code = newGameCode();
-    const l1 = `${base}room1.html#${code}`, l2 = `${base}room2.html#${code}`;
+  let code = null;
+  const plays = (id, d) => { const n = parseInt(document.getElementById(id).value, 10); return n >= 1 && n <= 20 ? n : d; };
+  function showLinks() {
+    if (!code) return;
+    // The play limits ride in each room's link, so changing them here updates the links to share.
+    const l1 = `${base}room1.html?plays=${plays('plays1', 3)}#${code}`, l2 = `${base}room2.html?plays=${plays('plays2', 2)}#${code}`;
     document.getElementById('code').textContent = code;
     document.getElementById('link1').textContent = l1;
     document.getElementById('link2').textContent = l2;
     document.getElementById('door1').href = l1;
     document.getElementById('door2').href = l2;
     document.getElementById('links').hidden = false;
-  };
+  }
+  document.getElementById('new-game').onclick = () => { code = newGameCode(); showLinks(); };
+  for (const id of ['plays1', 'plays2']) document.getElementById(id).addEventListener('input', showLinks);
   document.querySelectorAll('[data-copy]').forEach((b) => b.onclick = async () => {
     const text = document.getElementById(b.dataset.copy).textContent;
     try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; }

@@ -57,6 +57,12 @@ async function watch(game, kind, onAdd, onError) {
 export const watchLive = (game, onAdd, onError) => watch(game, 'recordings', onAdd, onError);
 export const watchResults = (game, onAdd, onError = () => {}) => watch(game, 'results', onAdd, onError);
 
+// Plays allowed, from the room link (room1.html?plays=3#K7QF). The lobby sets it; default when missing.
+export function playLimit(fallback) {
+  const n = parseInt(new URLSearchParams(location.search).get('plays'), 10);
+  return n >= 1 && n <= 20 ? n : fallback;
+}
+
 // Game codes: the part after # in the room links, e.g. room2.html#K7QF.
 const LETTERS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 export const newGameCode = () => Array.from({ length: 4 }, () => LETTERS[Math.floor(Math.random() * LETTERS.length)]).join('');
